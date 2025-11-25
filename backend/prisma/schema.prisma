@@ -7,7 +7,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // Enums
@@ -66,8 +65,8 @@ model School {
 }
 
 model User {
-  id             String   @id @default(uuid())
-  email          String   @unique
+  id             String          @id @default(uuid())
+  email          String          @unique
   passwordHash   String
   firstName      String
   lastName       String
@@ -75,13 +74,16 @@ model User {
   role           Role
   refreshToken   String?
   companyId      String?
-  company        Company? @relation(fields: [companyId], references: [id])
+  company        Company?        @relation(fields: [companyId], references: [id])
   schoolId       String?
-  school         School?  @relation(fields: [schoolId], references: [id])
+  school         School?         @relation(fields: [schoolId], references: [id])
   driver         Driver?
-  parentChildren Child[]  @relation("ParentChild")
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  parentChildren Child[]         @relation("ParentChild")
+  paymentIntents PaymentIntent[]
+  notifications  Notification[]
+  auditLogs      AuditLog[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 
   @@index([companyId])
   @@index([schoolId])
@@ -93,37 +95,38 @@ model Driver {
   userId    String   @unique
   user      User     @relation(fields: [userId], references: [id])
   buses     Bus[]
+  trips     Trip[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Child {
-  id          String   @id @default(uuid())
+  id          String            @id @default(uuid())
   firstName   String
   lastName    String
   dateOfBirth DateTime
   parentId    String
-  parent      User     @relation("ParentChild", fields: [parentId], references: [id])
+  parent      User              @relation("ParentChild", fields: [parentId], references: [id])
   schoolId    String
-  school      School   @relation(fields: [schoolId], references: [id])
+  school      School            @relation(fields: [schoolId], references: [id])
   attendance  ChildAttendance[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 
   @@index([parentId])
   @@index([schoolId])
 }
 
 model Bus {
-  id           String        @id @default(uuid())
-  plateNumber  String        @unique
-  capacity     Int
-  driverId     String
-  driver       Driver        @relation(fields: [driverId], references: [id])
-  locations    BusLocation[]
-  trips        Trip[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id          String        @id @default(uuid())
+  plateNumber String        @unique
+  capacity    Int
+  driverId    String
+  driver      Driver        @relation(fields: [driverId], references: [id])
+  locations   BusLocation[]
+  trips       Trip[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
   @@index([driverId])
 }
@@ -156,19 +159,20 @@ model Stop {
 }
 
 model Trip {
-  id           String        @id @default(uuid())
-  busId        String
-  bus          Bus           @relation(fields: [busId], references: [id])
-  routeId      String
-  route        Route         @relation(fields: [routeId], references: [id])
-  driverId     String
-  driver       Driver        @relation(fields: [driverId], references: [id])
-  status       TripStatus    @default(SCHEDULED)
-  startTime    DateTime?
-  endTime      DateTime?
-  histories    TripHistory[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id          String            @id @default(uuid())
+  busId       String
+  bus         Bus               @relation(fields: [busId], references: [id])
+  routeId     String
+  route       Route             @relation(fields: [routeId], references: [id])
+  driverId    String
+  driver      Driver            @relation(fields: [driverId], references: [id])
+  status      TripStatus        @default(SCHEDULED)
+  startTime   DateTime?
+  endTime     DateTime?
+  histories   TripHistory[]
+  attendances ChildAttendance[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 
   @@index([busId])
   @@index([routeId])
@@ -194,13 +198,13 @@ model ChildAttendance {
   trip       Trip             @relation(fields: [tripId], references: [id])
   status     AttendanceStatus
   timestamp  DateTime         @default(now())
-  recordedBy String           // userId of who recorded it
+  recordedBy String // userId of who recorded it
   createdAt  DateTime         @default(now())
   updatedAt  DateTime         @updatedAt
 
+  @@unique([childId, tripId])
   @@index([childId])
   @@index([tripId])
-  @@unique([childId, tripId])
 }
 
 model BusLocation {
@@ -217,47 +221,47 @@ model BusLocation {
 }
 
 model PaymentIntent {
-  id            String   @id @default(uuid())
-  amount        Int
-  currency      String   @default("UGX")
-  parentId      String
-  parent        User     @relation(fields: [parentId], references: [id])
-  status        String   // pending, succeeded, failed
-  hubtleRef     String?
-  metadata      Json?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id        String   @id @default(uuid())
+  amount    Int
+  currency  String   @default("UGX")
+  parentId  String
+  parent    User     @relation(fields: [parentId], references: [id])
+  status    String // pending, succeeded, failed
+  hubtleRef String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([parentId])
 }
 
 model Notification {
-  id         String         @id @default(uuid())
-  title      String
-  message    String
-  type       NotificationType
-  userId     String
-  user       User           @relation(fields: [userId], references: [id])
-  isRead     Boolean        @default(false)
-  sentAt     DateTime       @default(now())
-  readAt     DateTime?
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
+  id        String           @id @default(uuid())
+  title     String
+  message   String
+  type      NotificationType
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  isRead    Boolean          @default(false)
+  sentAt    DateTime         @default(now())
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
 
   @@index([userId])
 }
 
 model AuditLog {
-  id          String   @id @default(uuid())
-  userId      String?
-  user        User?    @relation(fields: [userId], references: [id])
-  action      String
-  entity      String
-  entityId    String?
-  details     Json?
-  ipAddress   String?
-  userAgent   String?
-  timestamp   DateTime @default(now())
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String
+  entity    String
+  entityId  String?
+  details   Json?
+  ipAddress String?
+  userAgent String?
+  timestamp DateTime @default(now())
 
   @@index([userId])
   @@index([timestamp])
