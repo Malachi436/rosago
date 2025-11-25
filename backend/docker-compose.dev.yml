@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: rosago-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: rosago
+      POSTGRES_PASSWORD: rosago_password
+      POSTGRES_DB: rosago_dev
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - rosago-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: rosago-redis
+    restart: always
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    networks:
+      - rosago-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rosago-backend
+    restart: always
+    ports:
+      - '3000:3000'
+    environment:
+      DATABASE_URL: postgresql://rosago:rosago_password@postgres:5432/rosago_dev
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - rosago-network
+    volumes:
+      - .:/app
+      - /app/node_modules
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rosago-worker
+    restart: always
+    command: npm run worker
+    environment:
+      DATABASE_URL: postgresql://rosago:rosago_password@postgres:5432/rosago_dev
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - rosago-network
+    volumes:
+      - .:/app
+      - /app/node_modules
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  rosago-network:
+    driver: bridge
