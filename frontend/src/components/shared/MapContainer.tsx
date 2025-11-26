@@ -33,17 +33,21 @@ export function MapContainer({
   children,
   onMarkerPress,
 }: MapContainerProps) {
-  const mapRef = useRef<MapView>(null);
+  const mapRef = useRef<typeof MapView>(null);
 
   // Center map on bus location when it changes
   useEffect(() => {
     if (mapRef.current && busLocation) {
-      mapRef.current.animateToRegion({
-        latitude: busLocation.latitude,
-        longitude: busLocation.longitude,
-        latitudeDelta: 0.05,
-        longitudeDelta: 0.05,
-      });
+      // Type assertion to access the method
+      const mapView = mapRef.current as any;
+      if (mapView.animateToRegion) {
+        mapView.animateToRegion({
+          latitude: busLocation.latitude,
+          longitude: busLocation.longitude,
+          latitudeDelta: 0.05,
+          longitudeDelta: 0.05,
+        });
+      }
     }
   }, [busLocation]);
 
@@ -66,7 +70,7 @@ export function MapContainer({
   return (
     <View style={styles.container}>
       <MapView
-        ref={mapRef}
+        ref={mapRef as any}
         style={styles.map}
         provider={PROVIDER_GOOGLE}
         initialRegion={{
