@@ -31,7 +31,6 @@ export function LiquidGlassCard({
 
   return (
     <View
-      className={cn("rounded-2xl overflow-hidden", className)}
       style={[styles.container, style]}
       {...props}
     >
