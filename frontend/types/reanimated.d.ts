@@ -67,113 +67,93 @@ declare module "react-native-reanimated" {
   export function processColor(color: number | string): number;
   export function createWorklet<A extends any[], R>(fn: (...args: A) => R): (...args: A) => R;
 
-  // Gesture handlers
-  export interface PanGestureHandlerGestureEvent {
-    nativeEvent: {
-      absoluteX: number;
-      absoluteY: number;
-      x: number;
-      y: number;
-      translationX: number;
-      translationY: number;
-      velocityX: number;
-      velocityY: number;
-    };
+  // Extended ViewProps to include layout animation props
+  interface AnimatedViewProps extends ViewProps {
+    style?: AnimatedStyleProp<ViewStyle>;
+    entering?: any;
+    exiting?: any;
   }
 
   // Components
-  export const View: ComponentType<ViewProps & { style?: AnimatedStyleProp<ViewStyle> }>;
-  export const Text: ComponentType<ViewProps & { style?: AnimatedStyleProp<TextStyle> }>;
-  export const Image: ComponentType<ViewProps & { style?: AnimatedStyleProp<ImageStyle> }>;
-  export const ScrollView: ComponentType<ViewProps & { style?: AnimatedStyleProp<ViewStyle> }>;
+  export const View: ComponentType<AnimatedViewProps>;
+  export const Text: ComponentType<AnimatedViewProps & { style?: AnimatedStyleProp<TextStyle> }>;
+  export const Image: ComponentType<AnimatedViewProps & { style?: AnimatedStyleProp<ImageStyle> }>;
+  export const ScrollView: ComponentType<AnimatedViewProps & { style?: AnimatedStyleProp<ViewStyle> }>;
+  
+  // Helper function to create animated components
+  export function createAnimatedComponent<T>(component: T): T;
 
-  // Animated transitions
-  export interface EntryAnimationsValues {
-    targetOriginX: number;
-    targetOriginY: number;
-    targetWidth: number;
-    targetHeight: number;
-    targetGlobalOriginX: number;
-    targetGlobalOriginY: number;
-  }
-
-  export interface ExitAnimationsValues {
-    currentOriginX: number;
-    currentOriginY: number;
-    currentWidth: number;
-    currentHeight: number;
-    currentGlobalOriginX: number;
-    currentGlobalOriginY: number;
-  }
-
-  export type EntryExitAnimationFunction = (
-    targetValues: EntryAnimationsValues
-  ) => {
-    initialValues: { [key: string]: number };
-    animations: { [key: string]: number };
-  };
-
-  export type LayoutAnimationFunction = (
-    targetValues: EntryAnimationsValues & ExitAnimationsValues
-  ) => {
-    initialValues: { [key: string]: number };
-    animations: { [key: string]: number };
-  };
-
-  // Layout Animations
-  export function SlideInLeft: EntryExitAnimationFunction;
-  export function SlideInRight: EntryExitAnimationFunction;
-  export function SlideInUp: EntryExitAnimationFunction;
-  export function SlideInDown: EntryExitAnimationFunction;
-  export function SlideOutLeft: EntryExitAnimationFunction;
-  export function SlideOutRight: EntryExitAnimationFunction;
-  export function SlideOutUp: EntryExitAnimationFunction;
-  export function SlideOutDown: EntryExitAnimationFunction;
-
-  export function FadeIn: EntryExitAnimationFunction;
-  export function FadeOut: EntryExitAnimationFunction;
-
-  export function Layout: LayoutAnimationFunction;
+  // Layout Animations - simplified declarations
+  export const FadeIn: any;
+  export const FadeOut: any;
+  export const FadeInDown: any;
+  export const FadeInUp: any;
+  export const FadeInLeft: any;
+  export const FadeInRight: any;
+  export const FadeOutDown: any;
+  export const FadeOutUp: any;
+  export const FadeOutLeft: any;
+  export const FadeOutRight: any;
+  export const SlideInDown: any;
+  export const SlideInUp: any;
+  export const SlideInLeft: any;
+  export const SlideInRight: any;
+  export const SlideOutDown: any;
+  export const SlideOutUp: any;
+  export const SlideOutLeft: any;
+  export const SlideOutRight: any;
+  export const Layout: any;
 
   // Layout Animations Provider
   export const LayoutAnimationRepository: {
-    register: (name: string, animation: LayoutAnimationFunction) => void;
-    get: (name: string) => LayoutAnimationFunction;
+    register: (name: string, animation: any) => void;
+    get: (name: string) => any;
   };
 
   // Default export
-  export default {
-    useSharedValue,
-    useAnimatedStyle,
-    useAnimatedProps,
-    useDerivedValue,
-    useAnimatedReaction,
-    withTiming,
-    withSpring,
-    withDecay,
-    cancelAnimation,
-    delay,
-    sequence,
-    repeat,
-    runOnUI,
-    runOnJS,
-    processColor,
-    createWorklet,
-    View,
-    Text,
-    Image,
-    ScrollView,
-    SlideInLeft,
-    SlideInRight,
-    SlideInUp,
-    SlideInDown,
-    SlideOutLeft,
-    SlideOutRight,
-    SlideOutUp,
-    SlideOutDown,
-    FadeIn,
-    FadeOut,
-    Layout,
-    LayoutAnimationRepository,
+  const reanimated: {
+    useSharedValue: typeof useSharedValue;
+    useAnimatedStyle: typeof useAnimatedStyle;
+    useAnimatedProps: typeof useAnimatedProps;
+    useDerivedValue: typeof useDerivedValue;
+    useAnimatedReaction: typeof useAnimatedReaction;
+    withTiming: typeof withTiming;
+    withSpring: typeof withSpring;
+    withDecay: typeof withDecay;
+    cancelAnimation: typeof cancelAnimation;
+    delay: typeof delay;
+    sequence: typeof sequence;
+    repeat: typeof repeat;
+    runOnUI: typeof runOnUI;
+    runOnJS: typeof runOnJS;
+    processColor: typeof processColor;
+    createWorklet: typeof createWorklet;
+    View: typeof View;
+    Text: typeof Text;
+    Image: typeof Image;
+    ScrollView: typeof ScrollView;
+    createAnimatedComponent: typeof createAnimatedComponent;
+    FadeIn: typeof FadeIn;
+    FadeOut: typeof FadeOut;
+    FadeInDown: typeof FadeInDown;
+    FadeInUp: typeof FadeInUp;
+    FadeInLeft: typeof FadeInLeft;
+    FadeInRight: typeof FadeInRight;
+    FadeOutDown: typeof FadeOutDown;
+    FadeOutUp: typeof FadeOutUp;
+    FadeOutLeft: typeof FadeOutLeft;
+    FadeOutRight: typeof FadeOutRight;
+    SlideInDown: typeof SlideInDown;
+    SlideInUp: typeof SlideInUp;
+    SlideInLeft: typeof SlideInLeft;
+    SlideInRight: typeof SlideInRight;
+    SlideOutDown: typeof SlideOutDown;
+    SlideOutUp: typeof SlideOutUp;
+    SlideOutLeft: typeof SlideOutLeft;
+    SlideOutRight: typeof SlideOutRight;
+    Layout: typeof Layout;
+    LayoutAnimationRepository: typeof LayoutAnimationRepository;
   };
+
+  export default reanimated;
 }
