@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+.expo/
+.expo-shared/
+dist/
+build/
+
+# Cache
+.cache/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+.nyc_output/
+
+# Documentation
+*.md
+!README.md
+
+# Git
+.git/
+.gitignore
+
+# Misc
+*.tgz
+*.gz
