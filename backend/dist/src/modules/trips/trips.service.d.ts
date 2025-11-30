@@ -7,6 +7,7 @@ export declare class TripsService {
     create(data: any): Promise<Trip>;
     update(id: string, data: any): Promise<Trip>;
     findAll(): Promise<Trip[]>;
+    findActiveByChildId(childId: string): Promise<Trip | null>;
     remove(id: string): Promise<Trip>;
     transitionTripStatus(tripId: string, newStatus: TripStatus, userId: string): Promise<Trip>;
     private isValidTransition;

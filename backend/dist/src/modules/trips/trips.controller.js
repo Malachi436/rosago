@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const trips_service_1 = require("./trips.service");
 const roles_decorator_1 = require("../roles/roles.decorator");
 const roles_guard_1 = require("../roles/roles.guard");
+const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
 let TripsController = class TripsController {
     constructor(tripsService) {
         this.tripsService = tripsService;
@@ -29,6 +30,9 @@ let TripsController = class TripsController {
     }
     findOne(id) {
         return this.tripsService.findOne(id);
+    }
+    findActiveByChild(childId) {
+        return this.tripsService.findActiveByChildId(childId);
     }
     update(id, updateTripDto) {
         return this.tripsService.update(id, updateTripDto);
@@ -65,6 +69,14 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], TripsController.prototype, "findOne", null);
 __decorate([
+    (0, common_1.Get)('child/:childId'),
+    (0, roles_decorator_1.Roles)('PLATFORM_ADMIN', 'COMPANY_ADMIN', 'PARENT'),
+    __param(0, (0, common_1.Param)('childId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], TripsController.prototype, "findActiveByChild", null);
+__decorate([
     (0, common_1.Patch)(':id'),
     (0, roles_decorator_1.Roles)('PLATFORM_ADMIN', 'COMPANY_ADMIN', 'DRIVER'),
     __param(0, (0, common_1.Param)('id')),
@@ -92,7 +104,7 @@ __decorate([
 ], TripsController.prototype, "remove", null);
 exports.TripsController = TripsController = __decorate([
     (0, common_1.Controller)('trips'),
-    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     __metadata("design:paramtypes", [trips_service_1.TripsService])
 ], TripsController);
 //# sourceMappingURL=trips.controller.js.map

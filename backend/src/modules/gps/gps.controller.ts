@@ -2,6 +2,7 @@ import { Controller, Post, Body, Get, Param, UseGuards } from '@nestjs/common';
 import { GpsService } from './gps.service';
 import { Roles } from '../roles/roles.decorator';
 import { RolesGuard } from '../roles/roles.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 class HeartbeatDto {
   busId: string;
@@ -12,7 +13,7 @@ class HeartbeatDto {
 }
 
 @Controller('gps')
-@UseGuards(RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class GpsController {
   constructor(private readonly gpsService: GpsService) {}
 

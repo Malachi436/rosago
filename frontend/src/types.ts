@@ -71,7 +71,7 @@ export interface Trip {
   pickedUp: number;
   droppedOff: number;
   absent: number;
-  status: 'pending' | 'active' | 'completed';
+  status: 'SCHEDULED' | 'IN_PROGRESS' | 'ARRIVED_SCHOOL' | 'RETURN_IN_PROGRESS' | 'COMPLETED';
 }
 
 // Notifications

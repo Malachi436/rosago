@@ -42,6 +42,26 @@ export class TripsService {
     });
   }
 
+  async findActiveByChildId(childId: string): Promise<Trip | null> {
+    return this.prisma.trip.findFirst({
+      where: {
+        status: { in: ['IN_PROGRESS', 'ARRIVED_SCHOOL', 'RETURN_IN_PROGRESS'] },
+        attendances: {
+          some: {
+            childId: childId,
+          },
+        },
+      },
+      include: {
+        histories: true,
+        attendances: {
+          where: { childId: childId },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async remove(id: string): Promise<Trip> {
     return this.prisma.trip.delete({
       where: { id },

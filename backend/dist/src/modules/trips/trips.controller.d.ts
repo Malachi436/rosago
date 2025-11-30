@@ -35,6 +35,17 @@ export declare class TripsController {
         endTime: Date | null;
         busId: string;
     }>;
+    findActiveByChild(childId: string): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        driverId: string;
+        routeId: string;
+        status: import(".prisma/client").$Enums.TripStatus;
+        startTime: Date | null;
+        endTime: Date | null;
+        busId: string;
+    }>;
     update(id: string, updateTripDto: any): Promise<{
         id: string;
         createdAt: Date;

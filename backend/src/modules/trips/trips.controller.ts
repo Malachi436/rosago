@@ -2,9 +2,10 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@n
 import { TripsService } from './trips.service';
 import { Roles } from '../roles/roles.decorator';
 import { RolesGuard } from '../roles/roles.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('trips')
-@UseGuards(RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class TripsController {
   constructor(private readonly tripsService: TripsService) {}
 
@@ -24,6 +25,12 @@ export class TripsController {
   @Roles('PLATFORM_ADMIN', 'COMPANY_ADMIN', 'DRIVER')
   findOne(@Param('id') id: string) {
     return this.tripsService.findOne(id);
+  }
+
+  @Get('child/:childId')
+  @Roles('PLATFORM_ADMIN', 'COMPANY_ADMIN', 'PARENT')
+  findActiveByChild(@Param('childId') childId: string) {
+    return this.tripsService.findActiveByChildId(childId);
   }
 
   @Patch(':id')

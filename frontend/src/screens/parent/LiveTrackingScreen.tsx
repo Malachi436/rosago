@@ -3,62 +3,158 @@
  * Real-time tracking of children and bus location
  */
 
-import React, { useState } from "react";
-import { View, Text, StyleSheet, Pressable, ScrollView } from "react-native";
+import React, { useState, useCallback, useEffect } from "react";
+import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
 import { colors } from "../../theme";
 import { LiquidGlassCard } from "../../components/ui/LiquidGlassCard";
-import { mockTrip, mockChildren, mockDriver } from "../../mock/data";
-import { useAuthStore } from "../../state/authStore";
+import { apiClient } from "../../utils/api";
+import { useAuthStore } from "../../stores/authStore";
+import { Child, Trip, BusLocation } from "../../types";
 
 export default function LiveTrackingScreen() {
-  const user = useAuthStore((s) => s.user);
+  const { user } = useAuthStore();
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+  const [children, setChildren] = useState<Child[]>([]);
+  const [trip, setTrip] = useState<Trip | null>(null);
+  const [busLocation, setBusLocation] = useState<BusLocation | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // TODO: Replace with actual API call
-  const trip = mockTrip;
-  const driver = mockDriver;
+  // Fetch children and today's trip
+  const fetchData = useCallback(async () => {
+    if (!user?.id) return;
 
-  // Get only user's children
-  const userChildren = mockChildren.filter(
-    (c) => c.parentId === user?.id && trip.childIds.includes(c.id)
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Fetch children
+      const childrenResponse = await apiClient.get<Child[]>(
+        `/children/parent/${user.id}`
+      );
+      const childrenData = Array.isArray(childrenResponse) ? childrenResponse : [];
+      setChildren(childrenData);
+      console.log('[LiveTracking] Fetched children:', childrenData);
+
+      // Fetch today's trips for first child
+      if (childrenData.length > 0) {
+        try {
+          const tripResponse = await apiClient.get<Trip>(
+            `/trips/child/${childrenData[0].id}`
+          );
+          setTrip(tripResponse as Trip);
+          console.log('[LiveTracking] Found active trip:', tripResponse);
+
+          // Fetch bus location only if trip is still active (not completed)
+          const tripStatus = (tripResponse as Trip)?.status;
+          if (tripStatus && ['IN_PROGRESS', 'ARRIVED_SCHOOL', 'RETURN_IN_PROGRESS'].includes(tripStatus)) {
+            try {
+              const locationResponse = await apiClient.get<BusLocation>(
+                `/gps/location/${(tripResponse as Trip)?.busId}`
+              );
+              setBusLocation(locationResponse as BusLocation);
+              console.log('[LiveTracking] Fetched bus location:', locationResponse);
+            } catch (locErr) {
+              console.log('[LiveTracking] Failed to fetch bus location:', locErr);
+            }
+          } else {
+            // Trip is completed - disable tracking for security
+            setBusLocation(null);
+            console.log('[LiveTracking] Trip status prevents tracking:', tripStatus);
+          }
+        } catch (tripErr: any) {
+          setTrip(null);
+          setBusLocation(null);
+          console.log('[LiveTracking] No active trip found');
+        }
+      }
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || 'Failed to load tracking data';
+      setError(errorMsg);
+      console.error('[LiveTracking] Error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user?.id]);
+
+  // Fetch data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [fetchData])
   );
 
-  const selectedChild = selectedChildId
-    ? userChildren.find((c) => c.id === selectedChildId)
-    : userChildren[0];
+  // Poll for location updates every 5 seconds (only if trip is active and not completed)
+  useEffect(() => {
+    if (!trip?.busId || !['IN_PROGRESS', 'ARRIVED_SCHOOL', 'RETURN_IN_PROGRESS'].includes(trip?.status as string)) return;
 
-  // Calculate ETA (mock)
-  const eta = "8 mins";
+    const interval = setInterval(async () => {
+      try {
+        const locationResponse = await apiClient.get<BusLocation>(
+          `/gps/location/${trip.busId}`
+        );
+        setBusLocation(locationResponse as BusLocation);
+      } catch (err) {
+        console.log('[LiveTracking] Poll error:', err);
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [trip?.busId, trip?.status]);
+
+  const selectedChild = children[0]; // Always show first child's tracking
 
   const initialRegion = {
-    latitude: selectedChild?.pickupLocation.latitude || 5.6037,
-    longitude: selectedChild?.pickupLocation.longitude || -0.187,
+    latitude: selectedChild?.pickupLocation?.latitude || 5.6037,
+    longitude: selectedChild?.pickupLocation?.longitude || -0.187,
     latitudeDelta: 0.02,
     longitudeDelta: 0.02,
   };
 
+  // Security: Check if tracking should be allowed
+  const isTripActive = trip && ['IN_PROGRESS', 'ARRIVED_SCHOOL', 'RETURN_IN_PROGRESS'].includes(trip.status);
+  const canTrack = isTripActive && busLocation;
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary.blue} />
+      </View>
+    );
+  }
+
+  if (error || !selectedChild) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text>{error || 'No children found'}</Text>
+        <Pressable onPress={fetchData}>
+          <Text>Retry</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      {/* Map View */}
       <MapView
         provider={PROVIDER_GOOGLE}
         style={styles.map}
         initialRegion={initialRegion}
         showsUserLocation
       >
-        {/* Bus Location */}
-        {trip.currentLocation && (
+        {/* Bus Location - Only show if trip is still active */}
+        {canTrack && busLocation && (
           <Marker
             coordinate={{
-              latitude: trip.currentLocation.latitude,
-              longitude: trip.currentLocation.longitude,
+              latitude: busLocation.latitude,
+              longitude: busLocation.longitude,
             }}
             title="School Bus"
-            description={`Driver: ${driver.name}`}
           >
             <View style={styles.busMarker}>
               <Ionicons name="bus" size={24} color={colors.neutral.pureWhite} />
@@ -67,13 +163,13 @@ export default function LiveTrackingScreen() {
         )}
 
         {/* Child Pickup Location */}
-        {selectedChild && (
+        {selectedChild?.pickupLocation && (
           <Marker
             coordinate={{
               latitude: selectedChild.pickupLocation.latitude,
               longitude: selectedChild.pickupLocation.longitude,
             }}
-            title={selectedChild.name}
+            title={`${selectedChild.firstName} ${selectedChild.lastName}`}
             description="Pickup Location"
           >
             <View style={styles.childMarker}>
@@ -87,15 +183,15 @@ export default function LiveTrackingScreen() {
       <View style={styles.bottomSheet}>
         <View style={styles.handle} />
 
-        {/* Child Selector */}
-        {userChildren.length > 1 && (
+        {/* Child Selector - Remove if only one child */}
+        {children.length > 1 && (
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             style={styles.childSelector}
             contentContainerStyle={styles.childSelectorContent}
           >
-            {userChildren.map((child, index) => (
+            {children.map((child, index) => (
               <Animated.View
                 key={child.id}
                 entering={FadeInDown.delay(100 + index * 50).springify()}
@@ -119,10 +215,7 @@ export default function LiveTrackingScreen() {
                         selectedChild?.id === child.id && styles.childChipAvatarTextActive,
                       ]}
                     >
-                      {child.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
+                      {`${child.firstName[0]}${child.lastName[0]}`.toUpperCase()}
                     </Text>
                   </View>
                   <Text
@@ -131,7 +224,7 @@ export default function LiveTrackingScreen() {
                       selectedChild?.id === child.id && styles.childChipTextActive,
                     ]}
                   >
-                    {child.name.split(" ")[0]}
+                    {child.firstName}
                   </Text>
                 </Pressable>
               </Animated.View>
@@ -145,27 +238,27 @@ export default function LiveTrackingScreen() {
             <View style={styles.statusCard}>
               <View style={styles.statusHeader}>
                 <View style={styles.statusLeft}>
-                  <Text style={styles.childName}>{selectedChild?.name}</Text>
+                  <Text style={styles.childName}>{selectedChild?.firstName} {selectedChild?.lastName}</Text>
                   <View style={styles.statusBadge}>
                     <View
                       style={[
                         styles.statusDot,
                         {
                           backgroundColor:
-                            selectedChild?.status === "picked_up"
+                            selectedChild?.status === "on_board"
                               ? colors.accent.successGreen
                               : colors.status.warningYellow,
                         },
                       ]}
                     />
                     <Text style={styles.statusText}>
-                      {selectedChild?.status === "picked_up" ? "On the bus" : "Waiting for pickup"}
+                      {selectedChild?.status === "on_board" ? "On the bus" : "Waiting for pickup"}
                     </Text>
                   </View>
                 </View>
                 <View style={styles.etaContainer}>
                   <Text style={styles.etaLabel}>ETA</Text>
-                  <Text style={styles.etaValue}>{eta}</Text>
+                  <Text style={styles.etaValue}>--</Text>
                 </View>
               </View>
 
@@ -174,7 +267,7 @@ export default function LiveTrackingScreen() {
               <View style={styles.locationInfo}>
                 <Ionicons name="location" size={16} color={colors.neutral.textSecondary} />
                 <Text style={styles.addressText} numberOfLines={2}>
-                  {selectedChild?.pickupLocation.address}
+                  {selectedChild?.pickupLocation?.address || 'No address'}
                 </Text>
               </View>
             </View>
@@ -187,16 +280,13 @@ export default function LiveTrackingScreen() {
             <View style={styles.driverCard}>
               <View style={styles.driverAvatar}>
                 <Text style={styles.driverAvatarText}>
-                  {driver.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")}
+                  --
                 </Text>
               </View>
               <View style={styles.driverInfo}>
-                <Text style={styles.driverLabel}>Your Driver</Text>
-                <Text style={styles.driverName}>{driver.name}</Text>
-                <Text style={styles.driverPhone}>{driver.phone}</Text>
+                <Text style={styles.driverLabel}>Driver Info</Text>
+                <Text style={styles.driverName}>--</Text>
+                <Text style={styles.driverPhone}>--</Text>
               </View>
               <Pressable style={styles.callButton}>
                 <Ionicons name="call" size={20} color={colors.neutral.pureWhite} />
