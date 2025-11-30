@@ -3,10 +3,10 @@
  * Main dashboard for parents showing children, pickup status, driver info, and quick actions
  */
 
-import React from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { CompositeNavigationProp } from "@react-navigation/native";
 import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -20,9 +20,11 @@ import { LargeCTAButton } from "../../components/ui/LargeCTAButton";
 import { ChildTile } from "../../components/shared/ChildTile";
 import { DriverInfoBanner } from "../../components/shared/DriverInfoBanner";
 import { ETAChip } from "../../components/shared/ETAChip";
-import { useAuthStore } from "../../state/authStore";
-import { mockChildren, mockDriver, mockBuses, mockNotifications } from "../../mock/data";
+import { useAuthStore } from "../../stores/authStore";
+import { apiClient } from "../../utils/api";
+import { mockDriver, mockBuses, mockNotifications } from "../../mock/data";
 import { ParentStackParamList, ParentTabParamList } from "../../navigation/ParentNavigator";
+import { Child } from "../../types";
 
 type NavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<ParentTabParamList, "Home">,
@@ -33,15 +35,44 @@ export default function ParentHomeScreen() {
   const navigation = useNavigation<NavigationProp>();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  
+  const [children, setChildren] = useState<Child[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const children = mockChildren.filter((c) => c.parentId === user?.id);
+  // Fetch children when screen focuses
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchChildren();
+    }, [user?.id])
+  );
+
+  const fetchChildren = async () => {
+    if (!user?.id) return;
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await apiClient.get<Child[]>(`/children/parent/${user.id}`);
+      console.log('[ParentHome] Fetched children:', response);
+      setChildren(Array.isArray(response) ? response : []);
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || 'Failed to load children';
+      console.log('[ParentHome] Error fetching children:', errorMsg);
+      setError(errorMsg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const driver = mockDriver;
   const bus = mockBuses[0];
   const unreadCount = mockNotifications.filter((n) => !n.read).length;
   const estimatedArrival = 12;
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
   };
 
   return (
@@ -112,6 +143,29 @@ export default function ParentHomeScreen() {
                   <Ionicons name="add-circle" size={28} color={colors.primary.blue} />
                 </Pressable>
               </View>
+              
+              {isLoading && (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color={colors.primary.blue} />
+                </View>
+              )}
+              
+              {error && !isLoading && (
+                <View style={styles.errorContainer}>
+                  <Text style={styles.errorText}>{error}</Text>
+                  <LargeCTAButton 
+                    title="Retry" 
+                    onPress={fetchChildren}
+                    variant="secondary"
+                    style={styles.retryButton}
+                  />
+                </View>
+              )}
+              
+              {!isLoading && !error && children.length === 0 && (
+                <Text style={styles.emptyText}>No children added yet</Text>
+              )}
+              
               {children.map((child, index) => (
                 <Animated.View
                   key={child.id}
@@ -360,5 +414,30 @@ const styles = StyleSheet.create({
   },
   payButton: {
     width: "100%",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 12,
+  },
+  errorText: {
+    fontSize: 16,
+    color: colors.status.dangerRed,
+    textAlign: "center",
+  },
+  retryButton: {
+    width: "100%",
+  },
+  emptyText: {
+    fontSize: 16,
+    color: colors.neutral.textSecondary,
+    textAlign: "center",
+    marginVertical: 12,
   },
 });

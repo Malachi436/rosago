@@ -6,7 +6,7 @@
 import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Child } from "../../types/models";
+import { Child } from "../../types";
 import { colors } from "../../theme";
 import { LiquidGlassCard } from "../ui/LiquidGlassCard";
 
@@ -25,13 +25,10 @@ export function ChildTile({ child, onPress, showStatus = true }: ChildTileProps)
     dropped_off: { icon: "checkmark-done-circle", color: colors.accent.successGreen, label: "Dropped Off" },
   };
 
-  const status = statusConfig[child.status];
+  const status = child.status ? statusConfig[child.status as keyof typeof statusConfig] : undefined;
 
   // Get initials from child name
-  const initials = child.name
-    .split(" ")
-    .map((n) => n[0])
-    .join("");
+  const initials = `${child.firstName[0]}${child.lastName[0]}`.toUpperCase();
 
   return (
     <Pressable onPress={onPress} disabled={!onPress}>
@@ -46,11 +43,11 @@ export function ChildTile({ child, onPress, showStatus = true }: ChildTileProps)
 
           {/* Info */}
           <View style={styles.infoContainer}>
-            <Text style={styles.name}>{child.name}</Text>
+            <Text style={styles.name}>{child.firstName} {child.lastName}</Text>
             <Text style={styles.pickupType}>
               {child.pickupType === "home" ? "Home Pickup" : "Roadside Pickup"}
             </Text>
-            {child.pickupLocation.address && (
+            {child.pickupLocation?.address && (
               <Text style={styles.address} numberOfLines={1}>
                 {child.pickupLocation.address}
               </Text>
@@ -58,10 +55,10 @@ export function ChildTile({ child, onPress, showStatus = true }: ChildTileProps)
           </View>
 
           {/* Status */}
-          {showStatus && (
+          {showStatus && child.status && (
             <View style={styles.statusContainer}>
-              <Ionicons name={status.icon as any} size={24} color={status.color} />
-              <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
+              <Ionicons name={status?.icon as any} size={24} color={status?.color} />
+              <Text style={[styles.statusText, { color: status?.color }]}>{status?.label}</Text>
             </View>
           )}
         </View>

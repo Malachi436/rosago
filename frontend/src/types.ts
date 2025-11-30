@@ -28,11 +28,14 @@ export interface SignUpData {
 // Child
 export interface Child {
   id: string;
-  name: string;
-  school: string;
-  grade?: string;
-  status: ChildStatus;
-  pickupType: PickupType;
+  firstName: string;
+  lastName: string;
+  dateOfBirth?: string;
+  schoolId: string;
+  school?: { id: string; name: string };
+  parentId: string;
+  status?: ChildStatus;
+  pickupType?: PickupType;
   pickupLocation?: {
     latitude: number;
     longitude: number;
@@ -40,7 +43,6 @@ export interface Child {
     roadName?: string;
   };
   image?: string;
-  parentId: string;
 }
 
 export interface AddChildData {

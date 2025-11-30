@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const children_service_1 = require("./children.service");
 const roles_decorator_1 = require("../roles/roles.decorator");
 const roles_guard_1 = require("../roles/roles.guard");
+const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
 let ChildrenController = class ChildrenController {
     constructor(childrenService) {
         this.childrenService = childrenService;
@@ -91,7 +92,7 @@ __decorate([
 ], ChildrenController.prototype, "remove", null);
 exports.ChildrenController = ChildrenController = __decorate([
     (0, common_1.Controller)('children'),
-    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     __metadata("design:paramtypes", [children_service_1.ChildrenService])
 ], ChildrenController);
 //# sourceMappingURL=children.controller.js.map
