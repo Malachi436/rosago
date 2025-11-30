@@ -45,11 +45,11 @@ export function ChildTile({ child, onPress, showStatus = true }: ChildTileProps)
           <View style={styles.infoContainer}>
             <Text style={styles.name}>{child.firstName} {child.lastName}</Text>
             <Text style={styles.pickupType}>
-              {child.pickupType === "home" ? "Home Pickup" : "Roadside Pickup"}
+              {child.pickupType === "HOME" ? "Home Pickup" : child.pickupType === "ROADSIDE" ? "Roadside Pickup" : "School Pickup"}
             </Text>
-            {child.pickupLocation?.address && (
+            {child.pickupDescription && (
               <Text style={styles.address} numberOfLines={1}>
-                {child.pickupLocation.address}
+                {child.pickupDescription}
               </Text>
             )}
           </View>

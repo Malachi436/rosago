@@ -110,8 +110,8 @@ export default function LiveTrackingScreen() {
   const selectedChild = children[0]; // Always show first child's tracking
 
   const initialRegion = {
-    latitude: selectedChild?.pickupLocation?.latitude || 5.6037,
-    longitude: selectedChild?.pickupLocation?.longitude || -0.187,
+    latitude: 5.6037, // Accra default
+    longitude: -0.187,
     latitudeDelta: 0.02,
     longitudeDelta: 0.02,
   };
