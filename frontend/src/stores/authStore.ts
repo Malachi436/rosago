@@ -17,6 +17,10 @@ interface AuthState {
   register: (data: SignUpData) => Promise<void>;
   setUser: (user: User) => void;
   clearError: () => void;
+  
+  // Persist middleware auto-adds this, we need to declare it
+  hasHydrated?: boolean;
+  setHasHydrated?: (state: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -59,8 +63,6 @@ export const useAuthStore = create<AuthState>()(
             error: null,
           });
         } catch (error: any) {
-          console.log('Login error:', error);
-          console.log('Error response:', error.response);
           const errorMessage =
             error.response?.data?.message || error.message || 'Login failed. Please try again.';
           set({ isLoading: false, error: errorMessage });
@@ -130,6 +132,11 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'auth-storage',
       storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+        role: state.role,
+      }),
     }
   )
 );

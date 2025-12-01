@@ -4,7 +4,7 @@
  * Routes authenticated users to Parent or Driver flows only
  */
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useAuthStore } from "../stores/authStore";

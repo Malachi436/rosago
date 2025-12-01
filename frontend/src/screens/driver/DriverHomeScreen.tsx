@@ -15,7 +15,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { colors } from "../../theme";
 import { LiquidGlassCard } from "../../components/ui/LiquidGlassCard";
 import { LargeCTAButton } from "../../components/ui/LargeCTAButton";
-import { useAuthStore } from "../../state/authStore";
+import { useAuthStore } from "../../stores/authStore";
 import { apiClient } from "../../utils/api";
 import { DriverStackParamList } from "../../navigation/DriverNavigator";
 
@@ -36,11 +36,9 @@ export default function DriverHomeScreen() {
       
       if (!user?.id) return;
 
-      // Note: We need to get the driver ID from the driver record
       const response = await apiClient.get<any>(`/drivers/${user.id}/today-trip`);
       setTrip(response);
     } catch (err: any) {
-      console.log('[DriverHomeScreen] Error fetching trip:', err);
       setError(err.message || 'Failed to load trip');
     } finally {
       setLoading(false);
