@@ -16,16 +16,23 @@ import { apiClient } from "../../utils/api";
 import { useAuthStore } from "../../stores/authStore";
 import { Child, Trip, BusLocation } from "../../types";
 
+interface TrackingData {
+  child: { id: string; name: string; colorCode: string };
+  home: { latitude: number; longitude: number; address: string };
+  school: { name: string; latitude: number; longitude: number; address: string };
+  currentTrip: any;
+  attendanceStatus: string;
+}
+
 export default function LiveTrackingScreen() {
   const { user } = useAuthStore();
-  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
-  const [children, setChildren] = useState<Child[]>([]);
-  const [trip, setTrip] = useState<Trip | null>(null);
-  const [busLocation, setBusLocation] = useState<BusLocation | null>(null);
+  const [childrenTrackingData, setChildrenTrackingData] = useState<TrackingData[]>([]);
+  const [busLocations, setBusLocations] = useState<{ [busId: string]: BusLocation }>({});
+  const [selectedChildIndex, setSelectedChildIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch children and today's trip
+  // Fetch all children and their tracking data
   const fetchData = useCallback(async () => {
     if (!user?.id) return;
 
@@ -38,40 +45,44 @@ export default function LiveTrackingScreen() {
         `/children/parent/${user.id}`
       );
       const childrenData = Array.isArray(childrenResponse) ? childrenResponse : [];
-      setChildren(childrenData);
-      console.log('[LiveTracking] Fetched children:', childrenData);
+      
+      if (childrenData.length === 0) {
+        setChildrenTrackingData([]);
+        return;
+      }
 
-      // Fetch today's trips for first child
-      if (childrenData.length > 0) {
-        try {
-          const tripResponse = await apiClient.get<Trip>(
-            `/trips/child/${childrenData[0].id}`
-          );
-          setTrip(tripResponse as Trip);
-          console.log('[LiveTracking] Found active trip:', tripResponse);
+      // Fetch tracking data for all children
+      const trackingDataPromises = childrenData.map(child =>
+        apiClient.get<TrackingData>(`/children/${child.id}/tracking`)
+          .catch(() => null)
+      );
+      
+      const trackingResults = await Promise.all(trackingDataPromises);
+      const validTrackingData = trackingResults.filter(data => data !== null) as TrackingData[];
+      setChildrenTrackingData(validTrackingData);
+      console.log('[LiveTracking] Fetched tracking data for children:', validTrackingData);
 
-          // Fetch bus location only if trip is still active (not completed)
-          const tripStatus = (tripResponse as Trip)?.status;
-          if (tripStatus && ['IN_PROGRESS', 'ARRIVED_SCHOOL', 'RETURN_IN_PROGRESS'].includes(tripStatus)) {
-            try {
-              const locationResponse = await apiClient.get<BusLocation>(
-                `/gps/location/${(tripResponse as Trip)?.busId}`
-              );
-              setBusLocation(locationResponse as BusLocation);
-              console.log('[LiveTracking] Fetched bus location:', locationResponse);
-            } catch (locErr) {
-              console.log('[LiveTracking] Failed to fetch bus location:', locErr);
-            }
-          } else {
-            // Trip is completed - disable tracking for security
-            setBusLocation(null);
-            console.log('[LiveTracking] Trip status prevents tracking:', tripStatus);
+      // Fetch bus locations for active trips
+      const busIds = validTrackingData
+        .map(data => data.currentTrip?.busId)
+        .filter(Boolean);
+      
+      if (busIds.length > 0) {
+        const locationPromises = busIds.map(busId =>
+          apiClient.get<BusLocation>(`/gps/location/${busId}`)
+            .then(loc => ({ busId, location: loc }))
+            .catch(() => null)
+        );
+        
+        const locationResults = await Promise.all(locationPromises);
+        const locationsMap: { [busId: string]: BusLocation } = {};
+        locationResults.forEach(result => {
+          if (result) {
+            locationsMap[result.busId] = result.location as BusLocation;
           }
-        } catch (tripErr: any) {
-          setTrip(null);
-          setBusLocation(null);
-          console.log('[LiveTracking] No active trip found');
-        }
+        });
+        setBusLocations(locationsMap);
+        console.log('[LiveTracking] Fetched bus locations:', locationsMap);
       }
     } catch (err: any) {
       const errorMsg = err.response?.data?.message || 'Failed to load tracking data';
@@ -89,36 +100,59 @@ export default function LiveTrackingScreen() {
     }, [fetchData])
   );
 
-  // Poll for location updates every 5 seconds (only if trip is active and not completed)
+  // Poll for location updates every 5 seconds
   useEffect(() => {
-    if (!trip?.busId || !['IN_PROGRESS', 'ARRIVED_SCHOOL', 'RETURN_IN_PROGRESS'].includes(trip?.status as string)) return;
+    if (childrenTrackingData.length === 0) return;
 
     const interval = setInterval(async () => {
       try {
-        const locationResponse = await apiClient.get<BusLocation>(
-          `/gps/location/${trip.busId}`
+        const activeTrips = childrenTrackingData.filter(data => 
+          data.currentTrip && 
+          ['IN_PROGRESS', 'ARRIVED_SCHOOL', 'RETURN_IN_PROGRESS'].includes(data.currentTrip.status)
         );
-        setBusLocation(locationResponse as BusLocation);
+        
+        if (activeTrips.length === 0) return;
+
+        const locationPromises = activeTrips.map(data =>
+          apiClient.get<BusLocation>(`/gps/location/${data.currentTrip.busId}`)
+            .then(loc => ({ busId: data.currentTrip.busId, location: loc }))
+            .catch(() => null)
+        );
+        
+        const locationResults = await Promise.all(locationPromises);
+        const updatedLocations = { ...busLocations };
+        locationResults.forEach(result => {
+          if (result) {
+            updatedLocations[result.busId] = result.location as BusLocation;
+          }
+        });
+        setBusLocations(updatedLocations);
       } catch (err) {
         console.log('[LiveTracking] Poll error:', err);
       }
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [trip?.busId, trip?.status]);
+  }, [childrenTrackingData]);
 
-  const selectedChild = children[0]; // Always show first child's tracking
+  const selectedChildData = childrenTrackingData[selectedChildIndex];
+  const selectedChildTrip = selectedChildData?.currentTrip;
+  const selectedBusLocation = selectedChildTrip ? busLocations[selectedChildTrip.busId] : null;
+  const canTrack = selectedChildTrip && 
+    ['IN_PROGRESS', 'ARRIVED_SCHOOL', 'RETURN_IN_PROGRESS'].includes(selectedChildTrip.status) &&
+    selectedBusLocation;
 
-  const initialRegion = {
-    latitude: 5.6037, // Accra default
+  const initialRegion = selectedChildData ? {
+    latitude: selectedChildData.home.latitude || 5.6037,
+    longitude: selectedChildData.home.longitude || -0.187,
+    latitudeDelta: 0.05,
+    longitudeDelta: 0.05,
+  } : {
+    latitude: 5.6037,
     longitude: -0.187,
     latitudeDelta: 0.02,
     longitudeDelta: 0.02,
   };
-
-  // Security: Check if tracking should be allowed
-  const isTripActive = trip && ['IN_PROGRESS', 'ARRIVED_SCHOOL', 'RETURN_IN_PROGRESS'].includes(trip.status);
-  const canTrack = isTripActive && busLocation;
 
   if (isLoading) {
     return (
@@ -128,7 +162,7 @@ export default function LiveTrackingScreen() {
     );
   }
 
-  if (error || !selectedChild) {
+  if (error || childrenTrackingData.length === 0) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
         <Text>{error || 'No children found'}</Text>
@@ -147,33 +181,60 @@ export default function LiveTrackingScreen() {
         initialRegion={initialRegion}
         showsUserLocation
       >
-        {/* Bus Location - Only show if trip is still active */}
-        {canTrack && busLocation && (
+        {/* Show all children markers on map */}
+        {childrenTrackingData.map((trackingData) => {
+          const isSelected = trackingData.child.id === selectedChildData?.child.id;
+          
+          // Home marker
+          if (trackingData.home.latitude && trackingData.home.longitude) {
+            return (
+              <Marker
+                key={`home-${trackingData.child.id}`}
+                coordinate={{
+                  latitude: trackingData.home.latitude,
+                  longitude: trackingData.home.longitude,
+                }}
+                title={`${trackingData.child.name}'s Home`}
+                description={trackingData.home.address}
+              >
+                <View style={[
+                  styles.homeMarker,
+                  { opacity: isSelected ? 1 : 0.6 }
+                ]}>
+                  <Ionicons name="home" size={20} color={colors.neutral.pureWhite} />
+                </View>
+              </Marker>
+            );
+          }
+        })}
+
+        {/* School marker */}
+        {selectedChildData?.school && (
           <Marker
             coordinate={{
-              latitude: busLocation.latitude,
-              longitude: busLocation.longitude,
+              latitude: selectedChildData.school.latitude,
+              longitude: selectedChildData.school.longitude,
+            }}
+            title={selectedChildData.school.name}
+            description="School location"
+          >
+            <View style={styles.schoolMarker}>
+              <Ionicons name="school" size={20} color={colors.neutral.pureWhite} />
+            </View>
+          </Marker>
+        )}
+
+        {/* Bus Location - Only show if trip is still active */}
+        {canTrack && selectedBusLocation && (
+          <Marker
+            coordinate={{
+              latitude: selectedBusLocation.latitude,
+              longitude: selectedBusLocation.longitude,
             }}
             title="School Bus"
           >
             <View style={styles.busMarker}>
               <Ionicons name="bus" size={24} color={colors.neutral.pureWhite} />
-            </View>
-          </Marker>
-        )}
-
-        {/* Child Pickup Location - Default Accra location */}
-        {selectedChild && (
-          <Marker
-            coordinate={{
-              latitude: 5.6037,
-              longitude: -0.187,
-            }}
-            title={`${selectedChild.firstName} ${selectedChild.lastName}`}
-            description="School pickup area (Accra)"
-          >
-            <View style={styles.childMarker}>
-              <Ionicons name="location" size={24} color={colors.neutral.pureWhite} />
             </View>
           </Marker>
         )}
@@ -183,48 +244,50 @@ export default function LiveTrackingScreen() {
       <View style={styles.bottomSheet}>
         <View style={styles.handle} />
 
-        {/* Child Selector - Remove if only one child */}
-        {children.length > 1 && (
+        {/* Child Selector */}
+        {childrenTrackingData.length > 1 && (
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             style={styles.childSelector}
             contentContainerStyle={styles.childSelectorContent}
           >
-            {children.map((child, index) => (
+            {childrenTrackingData.map((trackingData, index) => (
               <Animated.View
-                key={child.id}
+                key={trackingData.child.id}
                 entering={FadeInDown.delay(100 + index * 50).springify()}
               >
                 <Pressable
-                  onPress={() => setSelectedChildId(child.id)}
+                  onPress={() => setSelectedChildIndex(index)}
                   style={[
                     styles.childChip,
-                    selectedChild?.id === child.id && styles.childChipActive,
+                    selectedChildIndex === index && styles.childChipActive,
                   ]}
                 >
                   <View
                     style={[
                       styles.childChipAvatar,
-                      selectedChild?.id === child.id && styles.childChipAvatarActive,
+                      { backgroundColor: trackingData.child.colorCode + '30' },
+                      selectedChildIndex === index && { backgroundColor: trackingData.child.colorCode },
                     ]}
                   >
                     <Text
                       style={[
                         styles.childChipAvatarText,
-                        selectedChild?.id === child.id && styles.childChipAvatarTextActive,
+                        { color: trackingData.child.colorCode },
+                        selectedChildIndex === index && styles.childChipAvatarTextActive,
                       ]}
                     >
-                      {`${child.firstName[0]}${child.lastName[0]}`.toUpperCase()}
+                      {trackingData.child.name.split(' ').map(n => n[0]).join('')}
                     </Text>
                   </View>
                   <Text
                     style={[
                       styles.childChipText,
-                      selectedChild?.id === child.id && styles.childChipTextActive,
+                      selectedChildIndex === index && styles.childChipTextActive,
                     ]}
                   >
-                    {child.firstName}
+                    {trackingData.child.name.split(' ')[0]}
                   </Text>
                 </Pressable>
               </Animated.View>
@@ -233,46 +296,52 @@ export default function LiveTrackingScreen() {
         )}
 
         {/* Status Card */}
-        <Animated.View entering={FadeInDown.delay(200).springify()}>
-          <LiquidGlassCard intensity="heavy" className="mb-4">
-            <View style={styles.statusCard}>
-              <View style={styles.statusHeader}>
-                <View style={styles.statusLeft}>
-                  <Text style={styles.childName}>{selectedChild?.firstName} {selectedChild?.lastName}</Text>
-                  <View style={styles.statusBadge}>
-                    <View
-                      style={[
-                        styles.statusDot,
-                        {
-                          backgroundColor:
-                            selectedChild?.status === "on_board"
-                              ? colors.accent.successGreen
-                              : colors.status.warningYellow,
-                        },
-                      ]}
-                    />
-                    <Text style={styles.statusText}>
-                      {selectedChild?.status === "on_board" ? "On the bus" : "Waiting for pickup"}
-                    </Text>
+        {selectedChildData && (
+          <Animated.View entering={FadeInDown.delay(200).springify()}>
+            <LiquidGlassCard intensity="heavy" className="mb-4">
+              <View style={styles.statusCard}>
+                <View style={styles.statusHeader}>
+                  <View style={styles.statusLeft}>
+                    <Text style={styles.childName}>{selectedChildData.child.name}</Text>
+                    <View style={styles.statusBadge}>
+                      <View
+                        style={[
+                          styles.statusDot,
+                          {
+                            backgroundColor:
+                              selectedChildData.attendanceStatus === "PICKED_UP"
+                                ? colors.accent.successGreen
+                                : selectedChildData.attendanceStatus === "DROPPED"
+                                ? colors.primary.teal
+                                : colors.status.warningYellow,
+                          },
+                        ]}
+                      />
+                      <Text style={styles.statusText}>
+                        {selectedChildData.attendanceStatus === "PICKED_UP" ? "On the bus" :
+                         selectedChildData.attendanceStatus === "DROPPED" ? "Dropped off" :
+                         "Waiting for pickup"}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.etaContainer}>
+                    <Text style={styles.etaLabel}>Route</Text>
+                    <Text style={styles.etaValue} numberOfLines={1}>{selectedChildData.currentTrip?.routeName || '--'}</Text>
                   </View>
                 </View>
-                <View style={styles.etaContainer}>
-                  <Text style={styles.etaLabel}>ETA</Text>
-                  <Text style={styles.etaValue}>--</Text>
+
+                <View style={styles.divider} />
+
+                <View style={styles.locationInfo}>
+                  <Ionicons name="home" size={16} color={colors.neutral.textSecondary} />
+                  <Text style={styles.addressText} numberOfLines={2}>
+                    {selectedChildData.home.address || 'Home location'}
+                  </Text>
                 </View>
               </View>
-
-              <View style={styles.divider} />
-
-              <View style={styles.locationInfo}>
-                <Ionicons name="location" size={16} color={colors.neutral.textSecondary} />
-                <Text style={styles.addressText} numberOfLines={2}>
-                  Accra, Ghana (School pickup area)
-                </Text>
-              </View>
-            </View>
-          </LiquidGlassCard>
-        </Animated.View>
+            </LiquidGlassCard>
+          </Animated.View>
+        )}
 
         {/* Driver Info */}
         <Animated.View entering={FadeInDown.delay(300).springify()}>
@@ -322,11 +391,26 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
-  childMarker: {
+  homeMarker: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.primary.blue,
+    backgroundColor: colors.primary.teal,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 3,
+    borderColor: colors.neutral.pureWhite,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  schoolMarker: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.accent.successGreen,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 3,
@@ -385,7 +469,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: colors.primary.blue + "20",
     alignItems: "center",
     justifyContent: "center",
   },
