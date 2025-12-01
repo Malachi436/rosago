@@ -3,37 +3,80 @@
  * Display route map with stops and navigation
  */
 
-import React, { useState } from "react";
-import { View, Text, StyleSheet, Pressable, ScrollView, Linking, Platform } from "react-native";
+import React, { useState, useMemo } from "react";
+import { View, Text, StyleSheet, Pressable, ScrollView, Linking, Platform, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import Animated, { FadeInDown } from "react-native-reanimated";
+import { useFocusEffect } from "@react-navigation/native";
 
 import { colors } from "../../theme";
 import { LiquidGlassCard } from "../../components/ui/LiquidGlassCard";
-import { mockTrip, mockRoutes, mockChildren } from "../../mock/data";
+import { useAuthStore } from "../../state/authStore";
+import { apiClient } from "../../utils/api";
 
 export default function RouteMapScreen() {
+  const user = useAuthStore((s) => s.user);
+  const [trip, setTrip] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedStop, setSelectedStop] = useState<string | null>(null);
 
-  // TODO: Replace with actual API call
-  const trip = mockTrip;
-  const route = mockRoutes.find((r) => r.id === trip.routeId);
-  const childrenOnTrip = mockChildren.filter((c) => trip.childIds.includes(c.id));
+  const fetchTodayTrip = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      if (!user?.id) return;
 
-  if (!route) {
+      const response = await apiClient.get<any>(`/drivers/${user.id}/today-trip`);
+      setTrip(response);
+    } catch (err: any) {
+      console.log('[RouteMapScreen] Error fetching trip:', err);
+      setError(err.message || 'Failed to load route');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchTodayTrip();
+    }, [user?.id])
+  );
+
+  const route = trip?.route;
+  const childrenOnTrip = trip?.attendances || [];
+
+  if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.emptyState}>
-          <Ionicons name="map-outline" size={64} color={colors.neutral.textSecondary} />
-          <Text style={styles.emptyText}>No route available</Text>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary.blue} />
+          <Text style={styles.loadingText}>Loading route...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
-  const coordinates = route.stops.map((stop) => ({
+  if (error || !route) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.emptyState}>
+          <Ionicons name="map-outline" size={64} color={colors.neutral.textSecondary} />
+          <Text style={styles.emptyText}>{error || 'No route available'}</Text>
+          {error && (
+            <Pressable style={styles.retryButton} onPress={fetchTodayTrip}>
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </Pressable>
+          )}
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const coordinates = route.stops.map((stop: any) => ({
     latitude: stop.location.latitude,
     longitude: stop.location.longitude,
   }));
@@ -77,7 +120,7 @@ export default function RouteMapScreen() {
         />
 
         {/* Stop Markers */}
-        {route.stops.map((stop, index) => (
+        {route.stops.map((stop: any, index: number) => (
           <Marker
             key={stop.id}
             coordinate={{
@@ -129,8 +172,8 @@ export default function RouteMapScreen() {
           contentContainerStyle={styles.stopsContent}
           showsVerticalScrollIndicator={false}
         >
-          {route.stops.map((stop, index) => {
-            const childrenAtStop = childrenOnTrip.filter((c) =>
+          {route.stops.map((stop: any, index: number) => {
+            const childrenAtStop = childrenOnTrip.filter((c: any) =>
               stop.childIds.includes(c.id)
             );
 
@@ -385,5 +428,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.neutral.textSecondary,
     marginTop: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: colors.neutral.textSecondary,
+  },
+  retryButton: {
+    marginTop: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    backgroundColor: colors.primary.blue,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: colors.neutral.pureWhite,
+    fontWeight: "600",
+    fontSize: 14,
   },
 });
