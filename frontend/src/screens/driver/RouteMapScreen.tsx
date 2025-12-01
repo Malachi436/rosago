@@ -13,7 +13,7 @@ import { useFocusEffect } from "@react-navigation/native";
 
 import { colors } from "../../theme";
 import { LiquidGlassCard } from "../../components/ui/LiquidGlassCard";
-import { useAuthStore } from "../../state/authStore";
+import { useAuthStore } from "../../stores/authStore";
 import { apiClient } from "../../utils/api";
 
 export default function RouteMapScreen() {
@@ -77,8 +77,8 @@ export default function RouteMapScreen() {
   }
 
   const coordinates = route.stops.map((stop: any) => ({
-    latitude: stop.location.latitude,
-    longitude: stop.location.longitude,
+    latitude: stop.latitude,
+    longitude: stop.longitude,
   }));
 
   const initialRegion = {
@@ -124,11 +124,11 @@ export default function RouteMapScreen() {
           <Marker
             key={stop.id}
             coordinate={{
-              latitude: stop.location.latitude,
-              longitude: stop.location.longitude,
+              latitude: stop.latitude,
+              longitude: stop.longitude,
             }}
             title={`Stop ${index + 1}`}
-            description={stop.location.address}
+            description={stop.name}
             onPress={() => setSelectedStop(stop.id)}
           >
             <View style={styles.markerContainer}>
@@ -207,7 +207,7 @@ export default function RouteMapScreen() {
                     {/* Stop Info */}
                     <View style={styles.stopInfo}>
                       <Text style={styles.stopAddress} numberOfLines={2}>
-                        {stop.location.address}
+                        {stop.name}
                       </Text>
                       <View style={styles.stopMeta}>
                         <Ionicons
