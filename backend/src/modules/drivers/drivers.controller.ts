@@ -28,8 +28,13 @@ export class DriversController {
 
   @Get(':id/today-trip')
   @Roles('DRIVER')
-  async getTodayTrip(@Param('id') driverId: string) {
-    return this.driversService.getTodayTrip(driverId);
+  async getTodayTrip(@Param('id') userId: string) {
+    // Find the driver record by user ID
+    const driver = await this.driversService.findByUserId(userId);
+    if (!driver) {
+      return null;
+    }
+    return this.driversService.getTodayTrip(driver.id);
   }
 
   @Patch(':id')
