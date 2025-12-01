@@ -3,18 +3,18 @@
  * Display and manage attendance for children on the trip
  */
 
-import React, { useMemo } from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
+import React, { useState, useMemo } from "react";
+import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
 import { colors } from "../../theme";
 import { LiquidGlassCard } from "../../components/ui/LiquidGlassCard";
-import { useAttendanceStore } from "../../state/attendanceStore";
-import { mockTrip, mockChildren } from "../../mock/data";
+import { useAuthStore } from "../../state/authStore";
+import { apiClient } from "../../utils/api";
 import { DriverStackParamList } from "../../navigation/DriverNavigator";
 
 type NavigationProp = NativeStackNavigationProp<DriverStackParamList>;
@@ -24,47 +24,89 @@ export default function ChildListScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<ChildListRouteProp>();
   const filter = route.params?.filter || "all";
+  const user = useAuthStore((s) => s.user);
 
-  const markPickedUp = useAttendanceStore((s) => s.markPickedUp);
-  const markDroppedOff = useAttendanceStore((s) => s.markDroppedOff);
-  const getAttendanceForTrip = useAttendanceStore((s) => s.getAttendanceForTrip);
-  const getTripStats = useAttendanceStore((s) => s.getTripStats);
+  const [trip, setTrip] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [updatingChild, setUpdatingChild] = useState<string | null>(null);
 
-  // TODO: Replace with actual API call to fetch today's trip
-  const trip = mockTrip;
-  const childrenOnTrip = mockChildren.filter((c) => trip.childIds.includes(c.id));
+  const fetchTodayTrip = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      if (!user?.id) return;
 
-  const attendance = getAttendanceForTrip(trip.id);
+      const response = await apiClient.get<any>(`/drivers/${user.id}/today-trip`);
+      setTrip(response);
+    } catch (err: any) {
+      console.log('[ChildListScreen] Error fetching trip:', err);
+      setError(err.message || 'Failed to load children');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchTodayTrip();
+    }, [user?.id])
+  );
+
+  const childrenOnTrip = trip?.attendances || [];
+
+  // Calculate stats from attendance records
   const stats = useMemo(() => {
-    return getTripStats(trip.id, trip.childIds);
-  }, [trip.id, trip.childIds, getTripStats]);
+    const total = childrenOnTrip.length;
+    const waiting = childrenOnTrip.filter((a: any) => !a.status || a.status === 'PENDING').length;
+    const pickedUp = childrenOnTrip.filter((a: any) => a.status === 'PICKED_UP').length;
+    const droppedOff = childrenOnTrip.filter((a: any) => a.status === 'DROPPED').length;
+
+    return { total, waiting, pickedUp, droppedOff };
+  }, [childrenOnTrip]);
 
   // Filter children based on selected filter
   const filteredChildren = useMemo(() => {
     if (filter === "all") return childrenOnTrip;
 
-    return childrenOnTrip.filter((child) => {
-      const attendanceRecord = attendance.find((a) => a.childId === child.id);
-      const status = attendanceRecord?.status || child.status;
+    return childrenOnTrip.filter((attendance: any) => {
+      const status = attendance.status;
 
       if (filter === "waiting") {
-        return status === "waiting";
+        return !status || status === "PENDING";
       } else if (filter === "picked_up") {
-        return status === "picked_up" || status === "on_way";
+        return status === "PICKED_UP";
       } else if (filter === "dropped_off") {
-        return status === "dropped_off";
+        return status === "DROPPED";
       }
 
       return true;
     });
-  }, [childrenOnTrip, attendance, filter]);
+  }, [childrenOnTrip, filter]);
 
-  const handlePickup = (childId: string) => {
-    markPickedUp(trip.id, childId);
+  const handlePickup = async (childId: string) => {
+    try {
+      setUpdatingChild(childId);
+      // API call would go here to update attendance status
+      console.log('Mark picked up:', childId);
+    } catch (err: any) {
+      console.log('Error updating attendance:', err);
+    } finally {
+      setUpdatingChild(null);
+    }
   };
 
-  const handleDropoff = (childId: string) => {
-    markDroppedOff(trip.id, childId);
+  const handleDropoff = async (childId: string) => {
+    try {
+      setUpdatingChild(childId);
+      // API call would go here to update attendance status
+      console.log('Mark dropped off:', childId);
+    } catch (err: any) {
+      console.log('Error updating attendance:', err);
+    } finally {
+      setUpdatingChild(null);
+    }
   };
 
   const getFilterTitle = () => {
@@ -171,117 +213,159 @@ export default function ChildListScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.sectionTitle}>{getFilterTitle()}</Text>
+        {loading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.primary.blue} />
+            <Text style={styles.loadingText}>Loading children...</Text>
+          </View>
+        )}
 
-        {filteredChildren.length === 0 ? (
+        {error && !loading && (
+          <View style={styles.errorContainer}>
+            <Ionicons name="information-circle" size={48} color={colors.accent.sunsetOrange} />
+            <Text style={styles.errorText}>{error}</Text>
+            <Pressable style={styles.retryButton} onPress={fetchTodayTrip}>
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {!loading && !error && childrenOnTrip.length === 0 && (
           <View style={styles.emptyState}>
             <Ionicons name="people-outline" size={64} color={colors.neutral.textSecondary} />
-            <Text style={styles.emptyText}>No children in this category</Text>
+            <Text style={styles.emptyText}>No children on trip today</Text>
           </View>
-        ) : (
-          filteredChildren.map((child, index) => {
-            const attendanceRecord = attendance.find((a) => a.childId === child.id);
-            const status = attendanceRecord?.status || child.status;
+        )}
 
-            let statusColor: string = colors.neutral.textSecondary;
-            let statusIcon: keyof typeof Ionicons.glyphMap = "time-outline";
-            let statusText = "Waiting";
+        {!loading && !error && childrenOnTrip.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>{getFilterTitle()}</Text>
 
-            if (status === "picked_up" || status === "on_way") {
-              statusColor = colors.accent.sunsetOrange;
-              statusIcon = "arrow-up-circle";
-              statusText = "Picked Up";
-            } else if (status === "dropped_off") {
-              statusColor = colors.accent.successGreen;
-              statusIcon = "checkmark-circle";
-              statusText = "Dropped Off";
-            }
+            {filteredChildren.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Ionicons name="people-outline" size={64} color={colors.neutral.textSecondary} />
+                <Text style={styles.emptyText}>No children in this category</Text>
+              </View>
+            ) : (
+              filteredChildren.map((attendance: any, index: number) => {
+                const child = attendance.child;
+                const status = attendance.status;
 
-            return (
-              <Animated.View
-                key={child.id}
-                entering={FadeInDown.delay(100 + index * 50).springify()}
-                style={styles.childItem}
-              >
-                <LiquidGlassCard intensity="medium">
-                  <View style={styles.childCard}>
-                    {/* Child Info */}
-                    <View style={styles.childInfo}>
-                      <View style={styles.avatarCircle}>
-                        <Text style={styles.avatarText}>
-                          {child.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </Text>
+                let statusColor: string = colors.neutral.textSecondary;
+                let statusIcon: keyof typeof Ionicons.glyphMap = "time-outline";
+                let statusText = "Waiting";
+
+                if (status === "PICKED_UP") {
+                  statusColor = colors.accent.sunsetOrange;
+                  statusIcon = "arrow-up-circle";
+                  statusText = "Picked Up";
+                } else if (status === "DROPPED") {
+                  statusColor = colors.accent.successGreen;
+                  statusIcon = "checkmark-circle";
+                  statusText = "Dropped Off";
+                }
+
+                return (
+                  <Animated.View
+                    key={child.id}
+                    entering={FadeInDown.delay(100 + index * 50).springify()}
+                    style={styles.childItem}
+                  >
+                    <LiquidGlassCard intensity="medium">
+                      <View style={styles.childCard}>
+                        {/* Child Info */}
+                        <View style={styles.childInfo}>
+                          <View style={styles.avatarCircle}>
+                            <Text style={styles.avatarText}>
+                              {child.name
+                                .split(" ")
+                                .map((n: string) => n[0])
+                                .join("")}
+                            </Text>
+                          </View>
+                          <View style={styles.childDetails}>
+                            <Text style={styles.childName}>{child.name}</Text>
+                            <View style={styles.locationRow}>
+                              <Ionicons
+                                name="location"
+                                size={14}
+                                color={colors.neutral.textSecondary}
+                              />
+                              <Text style={styles.childAddress} numberOfLines={1}>
+                                {child.pickupLocation?.address || 'N/A'}
+                              </Text>
+                            </View>
+                            <View style={styles.statusBadge}>
+                              <Ionicons name={statusIcon} size={14} color={statusColor} />
+                              <Text style={[styles.statusText, { color: statusColor }]}>
+                                {statusText}
+                              </Text>
+                            </View>
+                          </View>
+                        </View>
+
+                        {/* Action Buttons */}
+                        <View style={styles.actionButtons}>
+                          {(!status || status === "PENDING") && (
+                            <Pressable
+                              onPress={() => handlePickup(child.id)}
+                              disabled={updatingChild === child.id}
+                              style={[styles.actionButton, styles.pickupButton]}
+                            >
+                              {updatingChild === child.id ? (
+                                <ActivityIndicator size="small" color={colors.neutral.pureWhite} />
+                              ) : (
+                                <>
+                                  <Ionicons
+                                    name="arrow-up-circle"
+                                    size={20}
+                                    color={colors.neutral.pureWhite}
+                                  />
+                                  <Text style={styles.actionButtonText}>Pick Up</Text>
+                                </>
+                              )}
+                            </Pressable>
+                          )}
+
+                          {status === "PICKED_UP" && (
+                            <Pressable
+                              onPress={() => handleDropoff(child.id)}
+                              disabled={updatingChild === child.id}
+                              style={[styles.actionButton, styles.dropoffButton]}
+                            >
+                              {updatingChild === child.id ? (
+                                <ActivityIndicator size="small" color={colors.neutral.pureWhite} />
+                              ) : (
+                                <>
+                                  <Ionicons
+                                    name="checkmark-circle"
+                                    size={20}
+                                    color={colors.neutral.pureWhite}
+                                  />
+                                  <Text style={styles.actionButtonText}>Drop Off</Text>
+                                </>
+                              )}
+                            </Pressable>
+                          )}
+
+                          {status === "DROPPED" && (
+                            <View style={styles.completedBadge}>
+                              <Ionicons
+                                name="checkmark-circle"
+                                size={20}
+                                color={colors.accent.successGreen}
+                              />
+                              <Text style={styles.completedText}>Completed</Text>
+                            </View>
+                          )}
+                        </View>
                       </View>
-                      <View style={styles.childDetails}>
-                        <Text style={styles.childName}>{child.name}</Text>
-                        <View style={styles.locationRow}>
-                          <Ionicons
-                            name="location"
-                            size={14}
-                            color={colors.neutral.textSecondary}
-                          />
-                          <Text style={styles.childAddress} numberOfLines={1}>
-                            {child.pickupLocation.address}
-                          </Text>
-                        </View>
-                        <View style={styles.statusBadge}>
-                          <Ionicons name={statusIcon} size={14} color={statusColor} />
-                          <Text style={[styles.statusText, { color: statusColor }]}>
-                            {statusText}
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-
-                    {/* Action Buttons */}
-                    <View style={styles.actionButtons}>
-                      {status === "waiting" && (
-                        <Pressable
-                          onPress={() => handlePickup(child.id)}
-                          style={[styles.actionButton, styles.pickupButton]}
-                        >
-                          <Ionicons
-                            name="arrow-up-circle"
-                            size={20}
-                            color={colors.neutral.pureWhite}
-                          />
-                          <Text style={styles.actionButtonText}>Pick Up</Text>
-                        </Pressable>
-                      )}
-
-                      {(status === "picked_up" || status === "on_way") && (
-                        <Pressable
-                          onPress={() => handleDropoff(child.id)}
-                          style={[styles.actionButton, styles.dropoffButton]}
-                        >
-                          <Ionicons
-                            name="checkmark-circle"
-                            size={20}
-                            color={colors.neutral.pureWhite}
-                          />
-                          <Text style={styles.actionButtonText}>Drop Off</Text>
-                        </Pressable>
-                      )}
-
-                      {status === "dropped_off" && (
-                        <View style={styles.completedBadge}>
-                          <Ionicons
-                            name="checkmark-circle"
-                            size={20}
-                            color={colors.accent.successGreen}
-                          />
-                          <Text style={styles.completedText}>Completed</Text>
-                        </View>
-                      )}
-                    </View>
-                  </View>
-                </LiquidGlassCard>
-              </Animated.View>
-            );
-          })
+                    </LiquidGlassCard>
+                  </Animated.View>
+                );
+              })
+            )}
+          </>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -442,5 +526,39 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     color: colors.accent.successGreen,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 40,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: colors.neutral.textSecondary,
+  },
+  errorContainer: {
+    alignItems: "center",
+    padding: 20,
+    marginVertical: 20,
+  },
+  errorText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: colors.accent.sunsetOrange,
+    textAlign: "center",
+  },
+  retryButton: {
+    marginTop: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    backgroundColor: colors.primary.blue,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: colors.neutral.pureWhite,
+    fontWeight: "600",
+    fontSize: 14,
   },
 });
