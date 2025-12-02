@@ -15,12 +15,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.TripsController = void 0;
 const common_1 = require("@nestjs/common");
 const trips_service_1 = require("./trips.service");
+const trip_automation_service_1 = require("./trip-automation.service");
 const roles_decorator_1 = require("../roles/roles.decorator");
 const roles_guard_1 = require("../roles/roles.guard");
 const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
 let TripsController = class TripsController {
-    constructor(tripsService) {
+    constructor(tripsService, tripAutomationService) {
         this.tripsService = tripsService;
+        this.tripAutomationService = tripAutomationService;
     }
     create(createTripDto) {
         return this.tripsService.create(createTripDto);
@@ -42,6 +44,10 @@ let TripsController = class TripsController {
     }
     remove(id) {
         return this.tripsService.remove(id);
+    }
+    async generateTodayTrips() {
+        await this.tripAutomationService.generateTripsManually();
+        return { message: 'Trip generation triggered successfully' };
     }
 };
 exports.TripsController = TripsController;
@@ -102,9 +108,17 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], TripsController.prototype, "remove", null);
+__decorate([
+    (0, common_1.Post)('generate-today'),
+    (0, roles_decorator_1.Roles)('PLATFORM_ADMIN', 'COMPANY_ADMIN'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], TripsController.prototype, "generateTodayTrips", null);
 exports.TripsController = TripsController = __decorate([
     (0, common_1.Controller)('trips'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    __metadata("design:paramtypes", [trips_service_1.TripsService])
+    __metadata("design:paramtypes", [trips_service_1.TripsService,
+        trip_automation_service_1.TripAutomationService])
 ], TripsController);
 //# sourceMappingURL=trips.controller.js.map

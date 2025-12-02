@@ -42,6 +42,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
+const schedule_1 = require("@nestjs/schedule");
 const nest_winston_1 = require("nest-winston");
 const winston = __importStar(require("winston"));
 const auth_module_1 = require("./modules/auth/auth.module");
@@ -62,6 +63,7 @@ const admin_module_1 = require("./modules/admin/admin.module");
 const realtime_module_1 = require("./modules/realtime/realtime.module");
 const trip_exceptions_module_1 = require("./modules/trip-exceptions/trip-exceptions.module");
 const early_pickup_module_1 = require("./modules/early-pickup/early-pickup.module");
+const scheduled_routes_module_1 = require("./modules/scheduled-routes/scheduled-routes.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -69,6 +71,7 @@ exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
             config_1.ConfigModule.forRoot({ isGlobal: true }),
+            schedule_1.ScheduleModule.forRoot(),
             nest_winston_1.WinstonModule.forRoot({
                 transports: [
                     new winston.transports.Console({
@@ -96,6 +99,7 @@ exports.AppModule = AppModule = __decorate([
             realtime_module_1.RealtimeModule,
             trip_exceptions_module_1.TripExceptionsModule,
             early_pickup_module_1.EarlyPickupModule,
+            scheduled_routes_module_1.ScheduledRoutesModule,
         ],
         controllers: [],
         providers: [],

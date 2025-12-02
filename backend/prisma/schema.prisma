@@ -51,6 +51,22 @@ enum RequestStatus {
   CANCELLED
 }
 
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum ScheduleStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
 // Models
 model Company {
   id        String   @id @default(uuid())
@@ -109,14 +125,15 @@ model User {
 }
 
 model Driver {
-  id        String   @id @default(uuid())
-  license   String   @unique
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id])
-  buses     Bus[]
-  trips     Trip[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String           @id @default(uuid())
+  license         String           @unique
+  userId          String           @unique
+  user            User             @relation(fields: [userId], references: [id])
+  buses           Bus[]
+  trips           Trip[]
+  scheduledRoutes ScheduledRoute[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 }
 
 model Child {
@@ -147,30 +164,54 @@ model Child {
 }
 
 model Bus {
-  id          String        @id @default(uuid())
-  plateNumber String        @unique
-  capacity    Int
-  driverId    String
-  driver      Driver        @relation(fields: [driverId], references: [id])
-  locations   BusLocation[]
-  trips       Trip[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id              String           @id @default(uuid())
+  plateNumber     String           @unique
+  capacity        Int
+  driverId        String
+  driver          Driver           @relation(fields: [driverId], references: [id])
+  locations       BusLocation[]
+  trips           Trip[]
+  scheduledRoutes ScheduledRoute[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
   @@index([driverId])
 }
 
 model Route {
-  id        String   @id @default(uuid())
-  name      String
-  schoolId  String
-  school    School   @relation(fields: [schoolId], references: [id])
-  stops     Stop[]
-  trips     Trip[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String           @id @default(uuid())
+  name            String
+  schoolId        String
+  school          School           @relation(fields: [schoolId], references: [id])
+  stops           Stop[]
+  trips           Trip[]
+  scheduledRoutes ScheduledRoute[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
   @@index([schoolId])
+}
+
+model ScheduledRoute {
+  id                 String         @id @default(uuid())
+  routeId            String
+  route              Route          @relation(fields: [routeId], references: [id])
+  driverId           String
+  driver             Driver         @relation(fields: [driverId], references: [id])
+  busId              String
+  bus                Bus            @relation(fields: [busId], references: [id])
+  scheduledTime      String         // Format: "HH:mm" (e.g., "07:00")
+  recurringDays      DayOfWeek[]    // Array of days this route runs
+  status             ScheduleStatus @default(ACTIVE)
+  autoAssignChildren Boolean        @default(true)
+  effectiveFrom      DateTime?      // When this schedule starts
+  effectiveUntil     DateTime?      // When this schedule ends (null = indefinite)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  @@index([routeId])
+  @@index([driverId])
+  @@index([status])
 }
 
 model Stop {

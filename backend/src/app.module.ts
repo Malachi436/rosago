@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
 import { AuthModule } from './modules/auth/auth.module';
@@ -20,11 +21,15 @@ import { AdminModule } from './modules/admin/admin.module';
 import { RealtimeModule } from './modules/realtime/realtime.module';
 import { TripExceptionsModule } from './modules/trip-exceptions/trip-exceptions.module';
 import { EarlyPickupModule } from './modules/early-pickup/early-pickup.module';
+import { ScheduledRoutesModule } from './modules/scheduled-routes/scheduled-routes.module';
 
 @Module({
   imports: [
     // Configuration
     ConfigModule.forRoot({ isGlobal: true }),
+    
+    // Scheduling (for automated trip generation)
+    ScheduleModule.forRoot(),
     
     // Logging
     WinstonModule.forRoot({
@@ -60,6 +65,7 @@ import { EarlyPickupModule } from './modules/early-pickup/early-pickup.module';
     RealtimeModule,
     TripExceptionsModule,
     EarlyPickupModule,
+    ScheduledRoutesModule,
   ],
   controllers: [],
   providers: [],

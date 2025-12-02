@@ -4,38 +4,38 @@ export declare class DriversController {
     constructor(driversService: DriversService);
     create(createDriverDto: any): Promise<{
         id: string;
-        license: string;
-        userId: string;
         createdAt: Date;
         updatedAt: Date;
+        license: string;
+        userId: string;
     }>;
     findAll(): Promise<{
         id: string;
-        license: string;
-        userId: string;
         createdAt: Date;
         updatedAt: Date;
+        license: string;
+        userId: string;
     }[]>;
     getTodayTrip(userId: string): Promise<any>;
     findOne(id: string): Promise<{
         id: string;
-        license: string;
-        userId: string;
         createdAt: Date;
         updatedAt: Date;
+        license: string;
+        userId: string;
     }>;
     update(id: string, updateDriverDto: any): Promise<{
         id: string;
-        license: string;
-        userId: string;
         createdAt: Date;
         updatedAt: Date;
+        license: string;
+        userId: string;
     }>;
     remove(id: string): Promise<{
         id: string;
-        license: string;
-        userId: string;
         createdAt: Date;
         updatedAt: Date;
+        license: string;
+        userId: string;
     }>;
 }

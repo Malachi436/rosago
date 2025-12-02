@@ -148,7 +148,49 @@ async function main() {
 
   console.log(`Created children: ${child1.firstName}, ${child2.firstName}`);
 
-  // Create a trip for today
+  // Add pickup locations for children
+  await prisma.child.update({
+    where: { id: child1.id },
+    data: {
+      pickupType: 'HOME',
+      pickupLatitude: 5.5965,
+      pickupLongitude: -0.175,
+      homeLatitude: 5.5965,
+      homeLongitude: -0.175,
+      homeAddress: 'Near Oxford Street Stop',
+    },
+  });
+
+  await prisma.child.update({
+    where: { id: child2.id },
+    data: {
+      pickupType: 'HOME',
+      pickupLatitude: 5.6015,
+      pickupLongitude: -0.182,
+      homeLatitude: 5.6015,
+      homeLongitude: -0.182,
+      homeAddress: 'Near Cantonments Road Stop',
+    },
+  });
+
+  console.log('Updated children with pickup locations');
+
+  // Create a scheduled route (recurring Monday-Friday at 7:00 AM)
+  const scheduledRoute = await prisma.scheduledRoute.create({
+    data: {
+      routeId: route.id,
+      driverId: driver.id,
+      busId: bus.id,
+      scheduledTime: '07:00',
+      recurringDays: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'],
+      status: 'ACTIVE',
+      autoAssignChildren: true,
+    },
+  });
+
+  console.log(`Created scheduled route: ${scheduledRoute.id}`);
+
+  // Create a trip for today (for immediate testing)
   const today = new Date();
   today.setHours(7, 0, 0, 0); // Set to 7:00 AM today
   const trip = await prisma.trip.create({
@@ -160,7 +202,6 @@ async function main() {
       startTime: today,
     },
   });
-
 
   console.log(`Created trip: ${trip.id}`);
 
@@ -174,7 +215,21 @@ async function main() {
     },
   });
 
+  await prisma.childAttendance.create({
+    data: {
+      childId: child2.id,
+      tripId: trip.id,
+      status: 'PICKED_UP',
+      recordedBy: driverUser.id,
+    },
+  });
+
   console.log('Database seed completed successfully!');
+  console.log('\n=== SUMMARY ===');
+  console.log('- Scheduled Route: Every weekday at 7:00 AM');
+  console.log('- Children will be auto-assigned to trips based on their pickup locations');
+  console.log('- Trips will be auto-generated daily at midnight');
+  console.log('- Manual generation: POST /trips/generate-today');
 }
 
 main()
