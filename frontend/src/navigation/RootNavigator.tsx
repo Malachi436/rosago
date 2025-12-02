@@ -15,12 +15,14 @@ import LoginScreen from "../screens/auth/LoginScreen";
 import ParentSignUpScreen from "../screens/auth/ParentSignUpScreen";
 import ParentNavigator from "./ParentNavigator";
 import DriverNavigator from "./DriverNavigator";
+import AdminNavigator from "./AdminNavigator";
 
 export type RootStackParamList = {
   Login: undefined;
   ParentSignUp: undefined;
   ParentApp: undefined;
   DriverApp: undefined;
+  AdminApp: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -63,6 +65,9 @@ export default function RootNavigator() {
           {console.log('[RootNavigator] Rendering App screens - isAuthenticated is true, role:', role)}
           {role === "parent" && <Stack.Screen name="ParentApp" component={ParentNavigator} />}
           {role === "driver" && <Stack.Screen name="DriverApp" component={DriverNavigator} />}
+          {(role === "company_admin" || role === "platform_admin") && (
+            <Stack.Screen name="AdminApp" component={AdminNavigator} />
+          )}
         </>
       )}
     </Stack.Navigator>

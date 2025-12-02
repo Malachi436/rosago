@@ -1,5 +1,5 @@
 // Core Types
-export type UserRole = 'parent' | 'driver';
+export type UserRole = 'parent' | 'driver' | 'company_admin' | 'platform_admin';
 export type ChildStatus = 'waiting' | 'picked_up' | 'on_board' | 'dropped_off' | 'absent';
 export type PickupType = 'HOME' | 'ROADSIDE' | 'SCHOOL';
 export type NotificationType = 'PICKUP' | 'DROPOFF' | 'DELAY' | 'PAYMENT' | 'INFO';

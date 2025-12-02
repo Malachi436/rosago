@@ -15,11 +15,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.RoutesController = void 0;
 const common_1 = require("@nestjs/common");
 const routes_service_1 = require("./routes.service");
+const route_auto_service_1 = require("./route-auto.service");
 const roles_decorator_1 = require("../roles/roles.decorator");
 const roles_guard_1 = require("../roles/roles.guard");
 let RoutesController = class RoutesController {
-    constructor(routesService) {
+    constructor(routesService, routeAutoService) {
         this.routesService = routesService;
+        this.routeAutoService = routeAutoService;
     }
     create(createRouteDto) {
         return this.routesService.create(createRouteDto);
@@ -38,6 +40,9 @@ let RoutesController = class RoutesController {
     }
     remove(id) {
         return this.routesService.remove(id);
+    }
+    autoGenerateRoutes(schoolId) {
+        return this.routeAutoService.autoGenerateRoutes(schoolId);
     }
 };
 exports.RoutesController = RoutesController;
@@ -89,9 +94,18 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], RoutesController.prototype, "remove", null);
+__decorate([
+    (0, common_1.Post)('auto-generate/:schoolId'),
+    (0, roles_decorator_1.Roles)('COMPANY_ADMIN', 'PLATFORM_ADMIN'),
+    __param(0, (0, common_1.Param)('schoolId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], RoutesController.prototype, "autoGenerateRoutes", null);
 exports.RoutesController = RoutesController = __decorate([
     (0, common_1.Controller)('routes'),
     (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
-    __metadata("design:paramtypes", [routes_service_1.RoutesService])
+    __metadata("design:paramtypes", [routes_service_1.RoutesService,
+        route_auto_service_1.RouteAutoService])
 ], RoutesController);
 //# sourceMappingURL=routes.controller.js.map

@@ -3,7 +3,7 @@
  * TypeScript type definitions for all app entities
  */
 
-export type UserRole = "parent" | "driver";
+export type UserRole = "parent" | "driver" | "company_admin" | "platform_admin";
 
 export type PickupType = "home" | "roadside";
 

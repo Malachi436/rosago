@@ -1,12 +1,16 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { RoutesService } from './routes.service';
+import { RouteAutoService } from './route-auto.service';
 import { Roles } from '../roles/roles.decorator';
 import { RolesGuard } from '../roles/roles.guard';
 
 @Controller('routes')
 @UseGuards(RolesGuard)
 export class RoutesController {
-  constructor(private readonly routesService: RoutesService) {}
+  constructor(
+    private readonly routesService: RoutesService,
+    private readonly routeAutoService: RouteAutoService,
+  ) {}
 
   @Post()
   @Roles('PLATFORM_ADMIN', 'COMPANY_ADMIN')
@@ -42,5 +46,11 @@ export class RoutesController {
   @Roles('PLATFORM_ADMIN')
   remove(@Param('id') id: string) {
     return this.routesService.remove(id);
+  }
+
+  @Post('auto-generate/:schoolId')
+  @Roles('COMPANY_ADMIN', 'PLATFORM_ADMIN')
+  autoGenerateRoutes(@Param('schoolId') schoolId: string) {
+    return this.routeAutoService.autoGenerateRoutes(schoolId);
   }
 }
