@@ -3,20 +3,27 @@
  * Display child information with initials and status
  */
 
-import React from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import React, { useState } from "react";
+import { View, Text, Pressable, StyleSheet, ActivityIndicator, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Child } from "../../types";
 import { colors } from "../../theme";
 import { LiquidGlassCard } from "../ui/LiquidGlassCard";
+import { apiClient } from "../../utils/api";
 
 interface ChildTileProps {
   child: Child;
   onPress?: () => void;
   showStatus?: boolean;
+  tripId?: string;
+  showActions?: boolean;
+  onActionComplete?: () => void;
 }
 
-export function ChildTile({ child, onPress, showStatus = true }: ChildTileProps) {
+export function ChildTile({ child, onPress, showStatus = true, tripId, showActions = false, onActionComplete }: ChildTileProps) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [earlyPickupPending, setEarlyPickupPending] = useState(false);
+  const [tripSkipped, setTripSkipped] = useState(false);
   const statusConfig = {
     waiting: { icon: "time-outline", color: colors.status.warningYellow, label: "Waiting" },
     picked_up: { icon: "checkmark-circle", color: colors.accent.successGreen, label: "Picked Up" },
@@ -30,40 +37,128 @@ export function ChildTile({ child, onPress, showStatus = true }: ChildTileProps)
   // Get initials from child name
   const initials = `${child.firstName[0]}${child.lastName[0]}`.toUpperCase();
 
-  return (
-    <Pressable onPress={onPress} disabled={!onPress}>
-      <LiquidGlassCard className="mb-3">
-        <View style={styles.container}>
-          {/* Avatar with Initials */}
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{initials}</Text>
-            </View>
-          </View>
+  const handleRequestEarlyPickup = async () => {
+    if (!tripId) {
+      Alert.alert('No Active Trip', 'There is no active trip for your child today.');
+      return;
+    }
 
-          {/* Info */}
-          <View style={styles.infoContainer}>
-            <Text style={styles.name}>{child.firstName} {child.lastName}</Text>
-            <Text style={styles.pickupType}>
-              {child.pickupType === "HOME" ? "Home Pickup" : child.pickupType === "ROADSIDE" ? "Roadside Pickup" : "School Pickup"}
-            </Text>
-            {child.pickupDescription && (
-              <Text style={styles.address} numberOfLines={1}>
-                {child.pickupDescription}
+    try {
+      setIsLoading(true);
+      await apiClient.post('/early-pickup/request', {
+        childId: child.id,
+        tripId,
+        reason: 'Parent requested early pickup',
+      });
+      setEarlyPickupPending(true);
+      Alert.alert('Success', 'Early pickup request sent to driver');
+      onActionComplete?.();
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Failed to request early pickup';
+      Alert.alert('Error', message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSkipTrip = async () => {
+    if (!tripId) {
+      Alert.alert('No Active Trip', 'There is no active trip for your child today.');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      await apiClient.post('/trip-exceptions/skip', {
+        childId: child.id,
+        tripId,
+      });
+      setTripSkipped(true);
+      Alert.alert('Success', 'Your child will not join the bus today');
+      onActionComplete?.();
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Failed to skip trip';
+      Alert.alert('Error', message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <View>
+      <Pressable onPress={onPress} disabled={!onPress}>
+        <LiquidGlassCard className="mb-3">
+          <View style={styles.container}>
+            {/* Avatar with Initials */}
+            <View style={styles.avatarContainer}>
+              <View style={[styles.avatar, tripSkipped && { backgroundColor: colors.status.dangerRed + "20" }]}>
+                <Text style={[styles.avatarText, tripSkipped && { color: colors.status.dangerRed }]}>{initials}</Text>
+              </View>
+            </View>
+
+            {/* Info */}
+            <View style={styles.infoContainer}>
+              <Text style={[styles.name, tripSkipped && { textDecorationLine: "line-through", color: colors.neutral.textSecondary }]}>
+                {child.firstName} {child.lastName}
               </Text>
+              <Text style={styles.pickupType}>
+                {child.pickupType === "HOME" ? "Home Pickup" : child.pickupType === "ROADSIDE" ? "Roadside Pickup" : "School Pickup"}
+              </Text>
+              {child.pickupDescription && (
+                <Text style={styles.address} numberOfLines={1}>
+                  {child.pickupDescription}
+                </Text>
+              )}
+              {tripSkipped && <Text style={styles.skippedBadge}>Skipped for today</Text>}
+              {earlyPickupPending && <Text style={styles.earlyPickupBadge}>Early pickup requested</Text>}
+            </View>
+
+            {/* Status */}
+            {showStatus && child.status && (
+              <View style={styles.statusContainer}>
+                <Ionicons name={status?.icon as any} size={24} color={status?.color} />
+                <Text style={[styles.statusText, { color: status?.color }]}>{status?.label}</Text>
+              </View>
             )}
           </View>
+        </LiquidGlassCard>
+      </Pressable>
 
-          {/* Status */}
-          {showStatus && child.status && (
-            <View style={styles.statusContainer}>
-              <Ionicons name={status?.icon as any} size={24} color={status?.color} />
-              <Text style={[styles.statusText, { color: status?.color }]}>{status?.label}</Text>
-            </View>
-          )}
+      {/* Action Buttons */}
+      {showActions && !tripSkipped && (
+        <View style={styles.actionsContainer}>
+          <Pressable
+            style={[styles.actionButton, styles.earlyPickupButton, (earlyPickupPending || !tripId) && styles.actionButtonDisabled]}
+            onPress={handleRequestEarlyPickup}
+            disabled={isLoading || earlyPickupPending}
+          >
+            {isLoading && earlyPickupPending ? (
+              <ActivityIndicator size="small" color={colors.neutral.pureWhite} />
+            ) : (
+              <>
+                <Ionicons name="arrow-up-circle" size={18} color={colors.neutral.pureWhite} />
+                <Text style={styles.actionButtonText}>Early Pickup</Text>
+              </>
+            )}
+          </Pressable>
+
+          <Pressable
+            style={[styles.actionButton, styles.skipButton, !tripId && styles.actionButtonDisabled]}
+            onPress={handleSkipTrip}
+            disabled={isLoading}
+          >
+            {isLoading && !earlyPickupPending ? (
+              <ActivityIndicator size="small" color={colors.neutral.pureWhite} />
+            ) : (
+              <>
+                <Ionicons name="close-circle" size={18} color={colors.neutral.pureWhite} />
+                <Text style={styles.actionButtonText}>Skip Today</Text>
+              </>
+            )}
+          </Pressable>
         </View>
-      </LiquidGlassCard>
-    </Pressable>
+      )}
+    </View>
   );
 }
 
@@ -114,5 +209,46 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "600",
     marginTop: 2,
+  },
+  skippedBadge: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.status.dangerRed,
+    marginTop: 4,
+  },
+  earlyPickupBadge: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.accent.successGreen,
+    marginTop: 4,
+  },
+  actionsContainer: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 12,
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    gap: 6,
+  },
+  actionButtonDisabled: {
+    opacity: 0.6,
+  },
+  earlyPickupButton: {
+    backgroundColor: colors.accent.successGreen,
+  },
+  skipButton: {
+    backgroundColor: colors.status.dangerRed,
+  },
+  actionButtonText: {
+    color: colors.neutral.pureWhite,
+    fontSize: 13,
+    fontWeight: "600",
   },
 });

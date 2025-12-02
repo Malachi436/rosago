@@ -8,19 +8,14 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AttendanceService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const client_1 = require("@prisma/client");
-const realtime_gateway_1 = require("../realtime/realtime.gateway");
 let AttendanceService = class AttendanceService {
-    constructor(prisma, realtimeGateway) {
+    constructor(prisma) {
         this.prisma = prisma;
-        this.realtimeGateway = realtimeGateway;
     }
     async recordAttendance(childId, tripId, status, recordedBy) {
         return this.prisma.childAttendance.create({
@@ -33,22 +28,13 @@ let AttendanceService = class AttendanceService {
         });
     }
     async updateAttendance(id, status, recordedBy) {
-        const attendance = await this.prisma.childAttendance.findUnique({
-            where: { id },
-            include: { trip: true },
-        });
-        const updated = await this.prisma.childAttendance.update({
+        return this.prisma.childAttendance.update({
             where: { id },
             data: {
                 status,
                 recordedBy,
             },
-            include: { trip: true },
         });
-        if (attendance && this.realtimeGateway) {
-            await this.realtimeGateway.emitAttendanceStatusChange(attendance.tripId, attendance.childId, status);
-        }
-        return updated;
     }
     async getAttendanceByChild(childId) {
         return this.prisma.childAttendance.findMany({
@@ -74,37 +60,12 @@ let AttendanceService = class AttendanceService {
         });
     }
     async markChildAsMissed(childId, tripId, recordedBy) {
-        const attendance = await this.recordAttendance(childId, tripId, client_1.AttendanceStatus.MISSED, recordedBy);
-        if (this.realtimeGateway) {
-            await this.realtimeGateway.emitAttendanceStatusChange(tripId, childId, client_1.AttendanceStatus.MISSED);
-        }
-        return attendance;
-    }
-    async unmarkAttendance(childId, tripId, recordedBy) {
-        const existing = await this.prisma.childAttendance.findUnique({
-            where: { childId_tripId: { childId, tripId } },
-        });
-        if (!existing) {
-            throw new Error('Attendance record not found');
-        }
-        const updated = await this.prisma.childAttendance.update({
-            where: { id: existing.id },
-            data: {
-                status: client_1.AttendanceStatus.PENDING,
-                recordedBy,
-            },
-        });
-        if (this.realtimeGateway) {
-            await this.realtimeGateway.emitAttendanceStatusChange(tripId, childId, client_1.AttendanceStatus.PENDING);
-        }
-        return updated;
+        return this.recordAttendance(childId, tripId, client_1.AttendanceStatus.MISSED, recordedBy);
     }
 };
 exports.AttendanceService = AttendanceService;
 exports.AttendanceService = AttendanceService = __decorate([
     (0, common_1.Injectable)(),
-    __param(1, (0, common_1.Optional)()),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        realtime_gateway_1.RealtimeGateway])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], AttendanceService);
 //# sourceMappingURL=attendance.service.js.map

@@ -15,17 +15,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.TripExceptionsController = void 0;
 const common_1 = require("@nestjs/common");
 const trip_exceptions_service_1 = require("./trip-exceptions.service");
-const roles_decorator_1 = require("../roles/roles.decorator");
-const roles_guard_1 = require("../roles/roles.guard");
 const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
 let TripExceptionsController = class TripExceptionsController {
     constructor(tripExceptionsService) {
         this.tripExceptionsService = tripExceptionsService;
     }
-    async skipTrip(data) {
-        return this.tripExceptionsService.skipTrip(data.childId, data.tripId, data.reason);
+    async skipTrip(body, req) {
+        return this.tripExceptionsService.skipTrip(body.childId, body.tripId, body.reason);
     }
-    async cancelSkipTrip(childId, tripId) {
+    async cancelSkip(childId, tripId) {
         return this.tripExceptionsService.cancelSkipTrip(childId, tripId);
     }
     async getTripExceptions(tripId) {
@@ -37,33 +35,30 @@ let TripExceptionsController = class TripExceptionsController {
 };
 exports.TripExceptionsController = TripExceptionsController;
 __decorate([
-    (0, common_1.Post)('skip'),
-    (0, roles_decorator_1.Roles)('PARENT'),
+    (0, common_1.Post)('/skip'),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], TripExceptionsController.prototype, "skipTrip", null);
 __decorate([
-    (0, common_1.Delete)(':childId/:tripId'),
-    (0, roles_decorator_1.Roles)('PARENT'),
+    (0, common_1.Delete)('/:childId/:tripId'),
     __param(0, (0, common_1.Param)('childId')),
     __param(1, (0, common_1.Param)('tripId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
-], TripExceptionsController.prototype, "cancelSkipTrip", null);
+], TripExceptionsController.prototype, "cancelSkip", null);
 __decorate([
-    (0, common_1.Get)('trip/:tripId'),
-    (0, roles_decorator_1.Roles)('DRIVER', 'COMPANY_ADMIN'),
+    (0, common_1.Get)('/trip/:tripId'),
     __param(0, (0, common_1.Param)('tripId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], TripExceptionsController.prototype, "getTripExceptions", null);
 __decorate([
-    (0, common_1.Get)('child/:childId'),
-    (0, roles_decorator_1.Roles)('PARENT', 'COMPANY_ADMIN'),
+    (0, common_1.Get)('/child/:childId'),
     __param(0, (0, common_1.Param)('childId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -71,7 +66,7 @@ __decorate([
 ], TripExceptionsController.prototype, "getChildExceptions", null);
 exports.TripExceptionsController = TripExceptionsController = __decorate([
     (0, common_1.Controller)('trip-exceptions'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __metadata("design:paramtypes", [trip_exceptions_service_1.TripExceptionsService])
 ], TripExceptionsController);
 //# sourceMappingURL=trip-exceptions.controller.js.map

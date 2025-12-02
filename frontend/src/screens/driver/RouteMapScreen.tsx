@@ -233,9 +233,9 @@ export default function RouteMapScreen() {
                     <Pressable
                       onPress={() =>
                         openNavigation(
-                          stop.location.latitude,
-                          stop.location.longitude,
-                          stop.location.address || "Stop"
+                          stop.latitude,
+                          stop.longitude,
+                          stop.name || "Stop"
                         )
                       }
                       style={styles.navigateButton}

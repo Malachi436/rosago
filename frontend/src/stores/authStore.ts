@@ -17,10 +17,6 @@ interface AuthState {
   register: (data: SignUpData) => Promise<void>;
   setUser: (user: User) => void;
   clearError: () => void;
-  
-  // Persist middleware auto-adds this, we need to declare it
-  hasHydrated?: boolean;
-  setHasHydrated?: (state: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -33,6 +29,7 @@ export const useAuthStore = create<AuthState>()(
       error: null,
 
       login: async (credentials: LoginCredentials) => {
+        console.log('[AuthStore] Login called with email:', credentials.email);
         set({ isLoading: true, error: null });
         try {
           const response = await apiClient.post<any>('/auth/login', {
@@ -40,6 +37,7 @@ export const useAuthStore = create<AuthState>()(
             password: credentials.password,
           });
 
+          console.log('[AuthStore] Login response:', response);
           // Store tokens
           await apiClient.setTokens({
             access_token: response.access_token,
@@ -55,6 +53,7 @@ export const useAuthStore = create<AuthState>()(
             role: response.user.role === 'PARENT' ? 'parent' : 'driver',
           };
 
+          console.log('[AuthStore] Setting user state:', user);
           set({
             user,
             isAuthenticated: true,
@@ -63,6 +62,8 @@ export const useAuthStore = create<AuthState>()(
             error: null,
           });
         } catch (error: any) {
+          console.log('[AuthStore] Login error:', error);
+          console.log('[AuthStore] Error response:', error.response);
           const errorMessage =
             error.response?.data?.message || error.message || 'Login failed. Please try again.';
           set({ isLoading: false, error: errorMessage });
@@ -132,11 +133,6 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'auth-storage',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({
-        user: state.user,
-        isAuthenticated: state.isAuthenticated,
-        role: state.role,
-      }),
     }
   )
 );

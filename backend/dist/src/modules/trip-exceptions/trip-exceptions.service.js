@@ -17,30 +17,20 @@ let TripExceptionsService = class TripExceptionsService {
         this.prisma = prisma;
     }
     async skipTrip(childId, tripId, reason) {
-        const existing = await this.prisma.tripException.findUnique({
+        return this.prisma.tripException.upsert({
             where: { childId_tripId: { childId, tripId } },
-        });
-        if (existing) {
-            return this.prisma.tripException.update({
-                where: { id: existing.id },
-                data: {
-                    reason,
-                    status: 'ACTIVE',
-                },
-            });
-        }
-        return this.prisma.tripException.create({
-            data: {
+            update: {
+                reason,
+                status: 'ACTIVE',
+                requestedAt: new Date(),
+            },
+            create: {
                 childId,
                 tripId,
-                reason,
-                type: 'SKIP_TRIP',
-                status: 'ACTIVE',
                 date: new Date(),
-            },
-            include: {
-                child: true,
-                trip: true,
+                type: 'SKIP_TRIP',
+                reason,
+                status: 'ACTIVE',
             },
         });
     }
@@ -59,20 +49,16 @@ let TripExceptionsService = class TripExceptionsService {
                 status: 'ACTIVE',
             },
             include: {
-                child: {
-                    select: {
-                        id: true,
-                        firstName: true,
-                        lastName: true,
-                    },
-                },
+                child: true,
             },
         });
     }
     async getChildExceptions(childId) {
         return this.prisma.tripException.findMany({
             where: { childId },
-            include: { trip: true },
+            include: {
+                trip: true,
+            },
             orderBy: { date: 'desc' },
         });
     }

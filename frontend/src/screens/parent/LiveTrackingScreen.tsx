@@ -3,238 +3,81 @@
  * Real-time tracking of children and bus location
  */
 
-import React, { useState, useCallback, useEffect } from "react";
-import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
+import React, { useState } from "react";
+import { View, Text, StyleSheet, Pressable, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
 import { colors } from "../../theme";
 import { LiquidGlassCard } from "../../components/ui/LiquidGlassCard";
-import { apiClient } from "../../utils/api";
-import { useAuthStore } from "../../stores/authStore";
-import { Child, Trip, BusLocation } from "../../types";
-
-interface TrackingData {
-  child: { id: string; name: string; colorCode: string };
-  home: { latitude: number; longitude: number; address: string };
-  school: { name: string; latitude: number; longitude: number; address: string };
-  currentTrip: any;
-  attendanceStatus: string;
-}
+import { mockTrip, mockChildren, mockDriver } from "../../mock/data";
+import { useAuthStore } from "../../state/authStore";
 
 export default function LiveTrackingScreen() {
-  const { user } = useAuthStore();
-  const [childrenTrackingData, setChildrenTrackingData] = useState<TrackingData[]>([]);
-  const [busLocations, setBusLocations] = useState<{ [busId: string]: BusLocation }>({});
-  const [selectedChildIndex, setSelectedChildIndex] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const user = useAuthStore((s) => s.user);
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
 
-  // Fetch all children and their tracking data
-  const fetchData = useCallback(async () => {
-    if (!user?.id) return;
+  // TODO: Replace with actual API call
+  const trip = mockTrip;
+  const driver = mockDriver;
 
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Fetch children
-      const childrenResponse = await apiClient.get<Child[]>(
-        `/children/parent/${user.id}`
-      );
-      const childrenData = Array.isArray(childrenResponse) ? childrenResponse : [];
-      
-      if (childrenData.length === 0) {
-        setChildrenTrackingData([]);
-        return;
-      }
-
-      // Fetch tracking data for all children
-      const trackingDataPromises = childrenData.map(child =>
-        apiClient.get<TrackingData>(`/children/${child.id}/tracking`)
-          .catch(() => null)
-      );
-      
-      const trackingResults = await Promise.all(trackingDataPromises);
-      const validTrackingData = trackingResults.filter(data => data !== null) as TrackingData[];
-      setChildrenTrackingData(validTrackingData);
-      console.log('[LiveTracking] Fetched tracking data for children:', validTrackingData);
-
-      // Fetch bus locations for active trips
-      const busIds = validTrackingData
-        .map(data => data.currentTrip?.busId)
-        .filter(Boolean);
-      
-      if (busIds.length > 0) {
-        const locationPromises = busIds.map(busId =>
-          apiClient.get<BusLocation>(`/gps/location/${busId}`)
-            .then(loc => ({ busId, location: loc }))
-            .catch(() => null)
-        );
-        
-        const locationResults = await Promise.all(locationPromises);
-        const locationsMap: { [busId: string]: BusLocation } = {};
-        locationResults.forEach(result => {
-          if (result) {
-            locationsMap[result.busId] = result.location as BusLocation;
-          }
-        });
-        setBusLocations(locationsMap);
-        console.log('[LiveTracking] Fetched bus locations:', locationsMap);
-      }
-    } catch (err: any) {
-      const errorMsg = err.response?.data?.message || 'Failed to load tracking data';
-      setError(errorMsg);
-      console.error('[LiveTracking] Error:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user?.id]);
-
-  // Fetch data when screen comes into focus
-  useFocusEffect(
-    useCallback(() => {
-      fetchData();
-    }, [fetchData])
+  // Get only user's children
+  const userChildren = mockChildren.filter(
+    (c) => c.parentId === user?.id && trip.childIds.includes(c.id)
   );
 
-  // Poll for location updates every 5 seconds
-  useEffect(() => {
-    if (childrenTrackingData.length === 0) return;
+  const selectedChild = selectedChildId
+    ? userChildren.find((c) => c.id === selectedChildId)
+    : userChildren[0];
 
-    const interval = setInterval(async () => {
-      try {
-        const activeTrips = childrenTrackingData.filter(data => 
-          data.currentTrip && 
-          ['IN_PROGRESS', 'ARRIVED_SCHOOL', 'RETURN_IN_PROGRESS'].includes(data.currentTrip.status)
-        );
-        
-        if (activeTrips.length === 0) return;
+  // Calculate ETA (mock)
+  const eta = "8 mins";
 
-        const locationPromises = activeTrips.map(data =>
-          apiClient.get<BusLocation>(`/gps/location/${data.currentTrip.busId}`)
-            .then(loc => ({ busId: data.currentTrip.busId, location: loc }))
-            .catch(() => null)
-        );
-        
-        const locationResults = await Promise.all(locationPromises);
-        const updatedLocations = { ...busLocations };
-        locationResults.forEach(result => {
-          if (result) {
-            updatedLocations[result.busId] = result.location as BusLocation;
-          }
-        });
-        setBusLocations(updatedLocations);
-      } catch (err) {
-        console.log('[LiveTracking] Poll error:', err);
-      }
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [childrenTrackingData]);
-
-  const selectedChildData = childrenTrackingData[selectedChildIndex];
-  const selectedChildTrip = selectedChildData?.currentTrip;
-  const selectedBusLocation = selectedChildTrip ? busLocations[selectedChildTrip.busId] : null;
-  const canTrack = selectedChildTrip && 
-    ['IN_PROGRESS', 'ARRIVED_SCHOOL', 'RETURN_IN_PROGRESS'].includes(selectedChildTrip.status) &&
-    selectedBusLocation;
-
-  const initialRegion = selectedChildData ? {
-    latitude: selectedChildData.home.latitude || 5.6037,
-    longitude: selectedChildData.home.longitude || -0.187,
-    latitudeDelta: 0.05,
-    longitudeDelta: 0.05,
-  } : {
-    latitude: 5.6037,
-    longitude: -0.187,
+  const initialRegion = {
+    latitude: selectedChild?.pickupLocation.latitude || 5.6037,
+    longitude: selectedChild?.pickupLocation.longitude || -0.187,
     latitudeDelta: 0.02,
     longitudeDelta: 0.02,
   };
 
-  if (isLoading) {
-    return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color={colors.primary.blue} />
-      </View>
-    );
-  }
-
-  if (error || childrenTrackingData.length === 0) {
-    return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Text>{error || 'No children found'}</Text>
-        <Pressable onPress={fetchData}>
-          <Text>Retry</Text>
-        </Pressable>
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
+      {/* Map View */}
       <MapView
         provider={PROVIDER_GOOGLE}
         style={styles.map}
         initialRegion={initialRegion}
         showsUserLocation
       >
-        {/* Show all children markers on map */}
-        {childrenTrackingData.map((trackingData) => {
-          const isSelected = trackingData.child.id === selectedChildData?.child.id;
-          
-          // Home marker
-          if (trackingData.home.latitude && trackingData.home.longitude) {
-            return (
-              <Marker
-                key={`home-${trackingData.child.id}`}
-                coordinate={{
-                  latitude: trackingData.home.latitude,
-                  longitude: trackingData.home.longitude,
-                }}
-                title={`${trackingData.child.name}'s Home`}
-                description={trackingData.home.address}
-              >
-                <View style={[
-                  styles.homeMarker,
-                  { opacity: isSelected ? 1 : 0.6 }
-                ]}>
-                  <Ionicons name="home" size={20} color={colors.neutral.pureWhite} />
-                </View>
-              </Marker>
-            );
-          }
-        })}
-
-        {/* School marker */}
-        {selectedChildData?.school && (
+        {/* Bus Location */}
+        {trip.currentLocation && (
           <Marker
             coordinate={{
-              latitude: selectedChildData.school.latitude,
-              longitude: selectedChildData.school.longitude,
+              latitude: trip.currentLocation.latitude,
+              longitude: trip.currentLocation.longitude,
             }}
-            title={selectedChildData.school.name}
-            description="School location"
+            title="School Bus"
+            description={`Driver: ${driver.name}`}
           >
-            <View style={styles.schoolMarker}>
-              <Ionicons name="school" size={20} color={colors.neutral.pureWhite} />
+            <View style={styles.busMarker}>
+              <Ionicons name="bus" size={24} color={colors.neutral.pureWhite} />
             </View>
           </Marker>
         )}
 
-        {/* Bus Location - Only show if trip is still active */}
-        {canTrack && selectedBusLocation && (
+        {/* Child Pickup Location */}
+        {selectedChild && (
           <Marker
             coordinate={{
-              latitude: selectedBusLocation.latitude,
-              longitude: selectedBusLocation.longitude,
+              latitude: selectedChild.pickupLocation.latitude,
+              longitude: selectedChild.pickupLocation.longitude,
             }}
-            title="School Bus"
+            title={selectedChild.name}
+            description="Pickup Location"
           >
-            <View style={styles.busMarker}>
-              <Ionicons name="bus" size={24} color={colors.neutral.pureWhite} />
+            <View style={styles.childMarker}>
+              <Ionicons name="location" size={24} color={colors.neutral.pureWhite} />
             </View>
           </Marker>
         )}
@@ -245,49 +88,50 @@ export default function LiveTrackingScreen() {
         <View style={styles.handle} />
 
         {/* Child Selector */}
-        {childrenTrackingData.length > 1 && (
+        {userChildren.length > 1 && (
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             style={styles.childSelector}
             contentContainerStyle={styles.childSelectorContent}
           >
-            {childrenTrackingData.map((trackingData, index) => (
+            {userChildren.map((child, index) => (
               <Animated.View
-                key={trackingData.child.id}
+                key={child.id}
                 entering={FadeInDown.delay(100 + index * 50).springify()}
               >
                 <Pressable
-                  onPress={() => setSelectedChildIndex(index)}
+                  onPress={() => setSelectedChildId(child.id)}
                   style={[
                     styles.childChip,
-                    selectedChildIndex === index && styles.childChipActive,
+                    selectedChild?.id === child.id && styles.childChipActive,
                   ]}
                 >
                   <View
                     style={[
                       styles.childChipAvatar,
-                      { backgroundColor: trackingData.child.colorCode + '30' },
-                      selectedChildIndex === index && { backgroundColor: trackingData.child.colorCode },
+                      selectedChild?.id === child.id && styles.childChipAvatarActive,
                     ]}
                   >
                     <Text
                       style={[
                         styles.childChipAvatarText,
-                        { color: trackingData.child.colorCode },
-                        selectedChildIndex === index && styles.childChipAvatarTextActive,
+                        selectedChild?.id === child.id && styles.childChipAvatarTextActive,
                       ]}
                     >
-                      {trackingData.child.name.split(' ').map(n => n[0]).join('')}
+                      {child.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")}
                     </Text>
                   </View>
                   <Text
                     style={[
                       styles.childChipText,
-                      selectedChildIndex === index && styles.childChipTextActive,
+                      selectedChild?.id === child.id && styles.childChipTextActive,
                     ]}
                   >
-                    {trackingData.child.name.split(' ')[0]}
+                    {child.name.split(" ")[0]}
                   </Text>
                 </Pressable>
               </Animated.View>
@@ -296,52 +140,46 @@ export default function LiveTrackingScreen() {
         )}
 
         {/* Status Card */}
-        {selectedChildData && (
-          <Animated.View entering={FadeInDown.delay(200).springify()}>
-            <LiquidGlassCard intensity="heavy" className="mb-4">
-              <View style={styles.statusCard}>
-                <View style={styles.statusHeader}>
-                  <View style={styles.statusLeft}>
-                    <Text style={styles.childName}>{selectedChildData.child.name}</Text>
-                    <View style={styles.statusBadge}>
-                      <View
-                        style={[
-                          styles.statusDot,
-                          {
-                            backgroundColor:
-                              selectedChildData.attendanceStatus === "PICKED_UP"
-                                ? colors.accent.successGreen
-                                : selectedChildData.attendanceStatus === "DROPPED"
-                                ? colors.primary.teal
-                                : colors.status.warningYellow,
-                          },
-                        ]}
-                      />
-                      <Text style={styles.statusText}>
-                        {selectedChildData.attendanceStatus === "PICKED_UP" ? "On the bus" :
-                         selectedChildData.attendanceStatus === "DROPPED" ? "Dropped off" :
-                         "Waiting for pickup"}
-                      </Text>
-                    </View>
-                  </View>
-                  <View style={styles.etaContainer}>
-                    <Text style={styles.etaLabel}>Route</Text>
-                    <Text style={styles.etaValue} numberOfLines={1}>{selectedChildData.currentTrip?.routeName || '--'}</Text>
+        <Animated.View entering={FadeInDown.delay(200).springify()}>
+          <LiquidGlassCard intensity="heavy" className="mb-4">
+            <View style={styles.statusCard}>
+              <View style={styles.statusHeader}>
+                <View style={styles.statusLeft}>
+                  <Text style={styles.childName}>{selectedChild?.name}</Text>
+                  <View style={styles.statusBadge}>
+                    <View
+                      style={[
+                        styles.statusDot,
+                        {
+                          backgroundColor:
+                            selectedChild?.status === "picked_up"
+                              ? colors.accent.successGreen
+                              : colors.status.warningYellow,
+                        },
+                      ]}
+                    />
+                    <Text style={styles.statusText}>
+                      {selectedChild?.status === "picked_up" ? "On the bus" : "Waiting for pickup"}
+                    </Text>
                   </View>
                 </View>
-
-                <View style={styles.divider} />
-
-                <View style={styles.locationInfo}>
-                  <Ionicons name="home" size={16} color={colors.neutral.textSecondary} />
-                  <Text style={styles.addressText} numberOfLines={2}>
-                    {selectedChildData.home.address || 'Home location'}
-                  </Text>
+                <View style={styles.etaContainer}>
+                  <Text style={styles.etaLabel}>ETA</Text>
+                  <Text style={styles.etaValue}>{eta}</Text>
                 </View>
               </View>
-            </LiquidGlassCard>
-          </Animated.View>
-        )}
+
+              <View style={styles.divider} />
+
+              <View style={styles.locationInfo}>
+                <Ionicons name="location" size={16} color={colors.neutral.textSecondary} />
+                <Text style={styles.addressText} numberOfLines={2}>
+                  {selectedChild?.pickupLocation.address}
+                </Text>
+              </View>
+            </View>
+          </LiquidGlassCard>
+        </Animated.View>
 
         {/* Driver Info */}
         <Animated.View entering={FadeInDown.delay(300).springify()}>
@@ -349,13 +187,16 @@ export default function LiveTrackingScreen() {
             <View style={styles.driverCard}>
               <View style={styles.driverAvatar}>
                 <Text style={styles.driverAvatarText}>
-                  --
+                  {driver.name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")}
                 </Text>
               </View>
               <View style={styles.driverInfo}>
-                <Text style={styles.driverLabel}>Driver Info</Text>
-                <Text style={styles.driverName}>--</Text>
-                <Text style={styles.driverPhone}>--</Text>
+                <Text style={styles.driverLabel}>Your Driver</Text>
+                <Text style={styles.driverName}>{driver.name}</Text>
+                <Text style={styles.driverPhone}>{driver.phone}</Text>
               </View>
               <Pressable style={styles.callButton}>
                 <Ionicons name="call" size={20} color={colors.neutral.pureWhite} />
@@ -391,26 +232,11 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
-  homeMarker: {
+  childMarker: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.primary.teal,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 3,
-    borderColor: colors.neutral.pureWhite,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  schoolMarker: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.accent.successGreen,
+    backgroundColor: colors.primary.blue,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 3,
@@ -469,6 +295,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
+    backgroundColor: colors.primary.blue + "20",
     alignItems: "center",
     justifyContent: "center",
   },

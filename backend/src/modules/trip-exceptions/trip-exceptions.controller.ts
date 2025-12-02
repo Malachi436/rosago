@@ -1,39 +1,31 @@
-import { Controller, Post, Get, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Post, Delete, Get, Body, Param, UseGuards, Req } from '@nestjs/common';
 import { TripExceptionsService } from './trip-exceptions.service';
-import { Roles } from '../roles/roles.decorator';
-import { RolesGuard } from '../roles/roles.guard';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('trip-exceptions')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class TripExceptionsController {
-  constructor(private readonly tripExceptionsService: TripExceptionsService) {}
+  constructor(private tripExceptionsService: TripExceptionsService) {}
 
-  @Post('skip')
-  @Roles('PARENT')
+  @Post('/skip')
   async skipTrip(
-    @Body() data: { childId: string; tripId: string; reason?: string },
+    @Body() body: { childId: string; tripId: string; reason?: string },
+    @Req() req: any,
   ) {
-    return this.tripExceptionsService.skipTrip(data.childId, data.tripId, data.reason);
+    return this.tripExceptionsService.skipTrip(body.childId, body.tripId, body.reason);
   }
 
-  @Delete(':childId/:tripId')
-  @Roles('PARENT')
-  async cancelSkipTrip(
-    @Param('childId') childId: string,
-    @Param('tripId') tripId: string,
-  ) {
+  @Delete('/:childId/:tripId')
+  async cancelSkip(@Param('childId') childId: string, @Param('tripId') tripId: string) {
     return this.tripExceptionsService.cancelSkipTrip(childId, tripId);
   }
 
-  @Get('trip/:tripId')
-  @Roles('DRIVER', 'COMPANY_ADMIN')
+  @Get('/trip/:tripId')
   async getTripExceptions(@Param('tripId') tripId: string) {
     return this.tripExceptionsService.getTripExceptions(tripId);
   }
 
-  @Get('child/:childId')
-  @Roles('PARENT', 'COMPANY_ADMIN')
+  @Get('/child/:childId')
   async getChildExceptions(@Param('childId') childId: string) {
     return this.tripExceptionsService.getChildExceptions(childId);
   }

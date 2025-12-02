@@ -1,13 +1,13 @@
 import { TripExceptionsService } from './trip-exceptions.service';
 export declare class TripExceptionsController {
-    private readonly tripExceptionsService;
+    private tripExceptionsService;
     constructor(tripExceptionsService: TripExceptionsService);
-    skipTrip(data: {
+    skipTrip(body: {
         childId: string;
         tripId: string;
         reason?: string;
-    }): Promise<any>;
-    cancelSkipTrip(childId: string, tripId: string): Promise<any>;
+    }, req: any): Promise<any>;
+    cancelSkip(childId: string, tripId: string): Promise<any>;
     getTripExceptions(tripId: string): Promise<any[]>;
     getChildExceptions(childId: string): Promise<any[]>;
 }

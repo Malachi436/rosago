@@ -38,16 +38,20 @@ export default function LoginScreen({ navigation }: Props) {
       return;
     }
 
+    console.log('[LoginScreen] handleLogin called with email:', email);
     setIsLoading(true);
     setError("");
 
     try {
+      console.log('[LoginScreen] Calling login function');
       await login({
         email,
         password,
       });
+      console.log('[LoginScreen] Login successful');
       // Navigation handled by RootNavigator based on auth state
     } catch (error: any) {
+      console.log('[LoginScreen] Login failed with error:', error);
       const errorMessage =
         error.response?.data?.message || "Login failed. Please try again.";
       setError(errorMessage);

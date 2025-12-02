@@ -21,12 +21,6 @@ export class DriversController {
     return this.driversService.findAll();
   }
 
-  @Get(':id')
-  @Roles('PLATFORM_ADMIN', 'COMPANY_ADMIN', 'DRIVER')
-  findOne(@Param('id') id: string) {
-    return this.driversService.findOne(id);
-  }
-
   @Get(':id/today-trip')
   @Roles('DRIVER')
   async getTodayTrip(@Param('id') userId: string) {
@@ -41,6 +35,12 @@ export class DriversController {
     const trip = await this.driversService.getTodayTrip(driver.id);
     console.log('[DriversController] Found trip:', trip);
     return trip;
+  }
+
+  @Get(':id')
+  @Roles('PLATFORM_ADMIN', 'COMPANY_ADMIN', 'DRIVER')
+  findOne(@Param('id') id: string) {
+    return this.driversService.findOne(id);
   }
 
   @Patch(':id')

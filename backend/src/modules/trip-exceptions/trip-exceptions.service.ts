@@ -5,42 +5,27 @@ import { PrismaService } from '../../prisma/prisma.service';
 export class TripExceptionsService {
   constructor(private prisma: PrismaService) {}
 
-  // Skip trip for a child (they won't use the bus that day)
+  // Skip a trip (create or update exception)
   async skipTrip(childId: string, tripId: string, reason?: string): Promise<any> {
-    // Check if exception already exists
-    const existing = await this.prisma.tripException.findUnique({
+    return this.prisma.tripException.upsert({
       where: { childId_tripId: { childId, tripId } },
-    });
-
-    if (existing) {
-      // Update existing
-      return this.prisma.tripException.update({
-        where: { id: existing.id },
-        data: {
-          reason,
-          status: 'ACTIVE',
-        },
-      });
-    }
-
-    // Create new exception
-    return this.prisma.tripException.create({
-      data: {
+      update: {
+        reason,
+        status: 'ACTIVE',
+        requestedAt: new Date(),
+      },
+      create: {
         childId,
         tripId,
-        reason,
-        type: 'SKIP_TRIP',
-        status: 'ACTIVE',
         date: new Date(),
-      },
-      include: {
-        child: true,
-        trip: true,
+        type: 'SKIP_TRIP',
+        reason,
+        status: 'ACTIVE',
       },
     });
   }
 
-  // Cancel a trip skip
+  // Cancel a skip
   async cancelSkipTrip(childId: string, tripId: string): Promise<any> {
     return this.prisma.tripException.update({
       where: { childId_tripId: { childId, tripId } },
@@ -50,7 +35,7 @@ export class TripExceptionsService {
     });
   }
 
-  // Get all exceptions for a trip
+  // Get all active exceptions for a trip
   async getTripExceptions(tripId: string): Promise<any[]> {
     return this.prisma.tripException.findMany({
       where: {
@@ -58,30 +43,27 @@ export class TripExceptionsService {
         status: 'ACTIVE',
       },
       include: {
-        child: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
+        child: true,
       },
     });
   }
 
-  // Get exceptions for a child
+  // Get exception history for a child
   async getChildExceptions(childId: string): Promise<any[]> {
     return this.prisma.tripException.findMany({
       where: { childId },
-      include: { trip: true },
+      include: {
+        trip: true,
+      },
       orderBy: { date: 'desc' },
     });
   }
 
-  // Get exceptions for a specific date
+  // Filter exceptions by specific date
   async getExceptionsByDate(date: Date): Promise<any[]> {
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
+
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
 

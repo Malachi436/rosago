@@ -44,12 +44,4 @@ export class ChildrenController {
   remove(@Param('id') id: string) {
     return this.childrenService.remove(id);
   }
-
-  @Get(':childId/tracking')
-  @Roles('PLATFORM_ADMIN', 'COMPANY_ADMIN', 'PARENT')
-  async getTrackingData(
-    @Param('childId') childId: string,
-  ) {
-    return this.childrenService.getTrackingData(childId);
-  }
 }

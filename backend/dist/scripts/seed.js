@@ -50,9 +50,6 @@ async function main() {
     const school = await prisma.school.create({
         data: {
             name: 'Greenfield Academy',
-            latitude: 5.6037,
-            longitude: -0.187,
-            address: 'Osu, Accra, Ghana',
             companyId: company.id,
         },
     });
@@ -145,10 +142,6 @@ async function main() {
             dateOfBirth: new Date('2010-05-15'),
             parentId: parentUser.id,
             schoolId: school.id,
-            homeLatitude: 5.5820,
-            homeLongitude: -0.1850,
-            homeAddress: 'Cantonments, Accra',
-            colorCode: '#3B82F6',
         },
     });
     const child2 = await prisma.child.create({
@@ -158,15 +151,11 @@ async function main() {
             dateOfBirth: new Date('2012-08-20'),
             parentId: parentUser.id,
             schoolId: school.id,
-            homeLatitude: 5.5820,
-            homeLongitude: -0.1850,
-            homeAddress: 'Cantonments, Accra',
-            colorCode: '#EF4444',
         },
     });
     console.log(`Created children: ${child1.firstName}, ${child2.firstName}`);
     const today = new Date();
-    today.setHours(7, 30, 0, 0);
+    today.setHours(7, 0, 0, 0);
     const trip = await prisma.trip.create({
         data: {
             busId: bus.id,
@@ -181,15 +170,7 @@ async function main() {
         data: {
             childId: child1.id,
             tripId: trip.id,
-            status: 'PENDING',
-            recordedBy: driverUser.id,
-        },
-    });
-    await prisma.childAttendance.create({
-        data: {
-            childId: child2.id,
-            tripId: trip.id,
-            status: 'PENDING',
+            status: 'PICKED_UP',
             recordedBy: driverUser.id,
         },
     });

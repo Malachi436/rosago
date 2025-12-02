@@ -34,11 +34,22 @@ export default function DriverHomeScreen() {
       setLoading(true);
       setError(null);
       
-      if (!user?.id) return;
+      console.log('[DriverHomeScreen] fetchTodayTrip called, user:', user);
+      if (!user?.id) {
+        console.log('[DriverHomeScreen] No user ID available');
+        setLoading(false);
+        return;
+      }
 
+      console.log('[DriverHomeScreen] Making API call to /drivers/' + user.id + '/today-trip');
       const response = await apiClient.get<any>(`/drivers/${user.id}/today-trip`);
+      console.log('[DriverHomeScreen] API response:', response);
       setTrip(response);
     } catch (err: any) {
+      console.log('[DriverHomeScreen] Error fetching trip:', err);
+      console.log('[DriverHomeScreen] Error code:', err.code);
+      console.log('[DriverHomeScreen] Error message:', err.message);
+      console.log('[DriverHomeScreen] Error response:', err.response);
       setError(err.message || 'Failed to load trip');
     } finally {
       setLoading(false);
@@ -47,7 +58,9 @@ export default function DriverHomeScreen() {
 
   useFocusEffect(
     React.useCallback(() => {
-      fetchTodayTrip();
+      if (user?.id) {
+        fetchTodayTrip();
+      }
     }, [user?.id])
   );
 
@@ -193,6 +206,18 @@ export default function DriverHomeScreen() {
                   <View style={styles.actionContent}>
                     <Ionicons name="megaphone" size={32} color={colors.accent.sunsetOrange} />
                     <Text style={styles.actionText}>Broadcast</Text>
+                  </View>
+                </LiquidGlassCard>
+              </Pressable>
+
+              <Pressable
+                onPress={() => navigation.navigate("EarlyPickupRequests")}
+                style={styles.actionCard}
+              >
+                <LiquidGlassCard intensity="medium">
+                  <View style={styles.actionContent}>
+                    <Ionicons name="arrow-up-circle" size={32} color={colors.status.warningYellow} />
+                    <Text style={styles.actionText}>Early Pickups</Text>
                   </View>
                 </LiquidGlassCard>
               </Pressable>

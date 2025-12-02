@@ -110,5 +110,4 @@ export declare class ChildrenController {
         colorCode: string;
         parentId: string;
     }>;
-    getTrackingData(childId: string): Promise<any>;
 }

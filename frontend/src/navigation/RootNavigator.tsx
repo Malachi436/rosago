@@ -28,6 +28,22 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export default function RootNavigator() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const role = useAuthStore((s) => s.role);
+  const user = useAuthStore((s) => s.user);
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Wait for persist middleware to hydrate
+  useEffect(() => {
+    console.log('[RootNavigator] Hydration check - isAuthenticated:', isAuthenticated, 'role:', role, 'user:', user);
+    setIsHydrated(true);
+  }, []);
+
+  if (!isHydrated) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primary.blue} />
+      </View>
+    );
+  }
 
   return (
     <Stack.Navigator
@@ -38,11 +54,13 @@ export default function RootNavigator() {
     >
       {!isAuthenticated ? (
         <>
+          {console.log('[RootNavigator] Rendering Login screens - isAuthenticated is false')}
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="ParentSignUp" component={ParentSignUpScreen} />
         </>
       ) : (
         <>
+          {console.log('[RootNavigator] Rendering App screens - isAuthenticated is true, role:', role)}
           {role === "parent" && <Stack.Screen name="ParentApp" component={ParentNavigator} />}
           {role === "driver" && <Stack.Screen name="DriverApp" component={DriverNavigator} />}
         </>

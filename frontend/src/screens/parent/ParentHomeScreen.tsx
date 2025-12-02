@@ -39,6 +39,7 @@ export default function ParentHomeScreen() {
   const [children, setChildren] = useState<Child[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [todayTrip, setTodayTrip] = useState<any>(null);
 
   // Fetch children when screen focuses
   useFocusEffect(
@@ -46,6 +47,8 @@ export default function ParentHomeScreen() {
       fetchChildren();
     }, [user?.id])
   );
+
+
 
   const fetchChildren = async () => {
     if (!user?.id) return;
@@ -57,6 +60,19 @@ export default function ParentHomeScreen() {
       const response = await apiClient.get<Child[]>(`/children/parent/${user.id}`);
       console.log('[ParentHome] Fetched children:', response);
       setChildren(Array.isArray(response) ? response : []);
+      
+      // Fetch trip for the first child (they should all be on the same trip)
+      if (Array.isArray(response) && response.length > 0) {
+        const firstChild = response[0];
+        try {
+          const tripResponse = await apiClient.get(`/trips/child/${firstChild.id}`);
+          console.log('[ParentHome] Fetched trip for child:', tripResponse);
+          setTodayTrip(tripResponse);
+        } catch (tripErr: any) {
+          console.log('[ParentHome] Error fetching child trip:', tripErr);
+          // Trip not found is okay - child might not be on a trip today
+        }
+      }
     } catch (err: any) {
       const errorMsg = err.response?.data?.message || 'Failed to load children';
       console.log('[ParentHome] Error fetching children:', errorMsg);
@@ -174,6 +190,11 @@ export default function ParentHomeScreen() {
                   <ChildTile
                     child={child}
                     onPress={() => navigation.navigate("Tracking")}
+                    tripId={todayTrip?.id}
+                    showActions={true}
+                    onActionComplete={() => {
+                      fetchChildren();
+                    }}
                   />
                 </Animated.View>
               ))}

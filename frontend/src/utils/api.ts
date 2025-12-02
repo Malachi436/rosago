@@ -2,6 +2,7 @@ import axios, { AxiosInstance, AxiosError } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // API configuration
+// Use your computer's IP address for physical devices or emulators
 const API_BASE_URL = 'http://192.168.100.15:3000';
 
 interface ApiRequestConfig {
@@ -32,8 +33,9 @@ class ApiClient {
     // Request interceptor
     this.axiosInstance.interceptors.request.use(
       async (config) => {
-        console.log('[API Client] Making request to:', config.url);
+        console.log('[API Client] Making request to:', config.url || 'unknown');
         const token = await AsyncStorage.getItem('access_token');
+        console.log('[API Client] Token exists:', !!token);
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -44,7 +46,12 @@ class ApiClient {
 
     // Response interceptor
     this.axiosInstance.interceptors.response.use(
-      (response) => response,
+      (response) => {
+        console.log('[API Client] Response received from:', response.config.url);
+        console.log('[API Client] Response status:', response.status);
+        console.log('[API Client] Response data:', JSON.stringify(response.data).substring(0, 200));
+        return response;
+      },
       async (error: AxiosError) => {
         const originalRequest = error.config as any;
         console.log('[API Client] Response error:', error.code, error.message);
