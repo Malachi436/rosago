@@ -25,10 +25,14 @@ export default function UsersPage() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
+      console.log('[Users Page] Fetching users from /users');
       const data = await apiClient.get<User[]>('/users');
+      console.log('[Users Page] Received data:', data);
       setUsers(data || []);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to load users');
+      console.error('[Users Page] Error fetching users:', err);
+      console.error('[Users Page] Error response:', err.response);
+      setError(err.response?.data?.message || err.message || 'Failed to load users');
     } finally {
       setLoading(false);
     }

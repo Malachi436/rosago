@@ -12,10 +12,10 @@ export declare class UsersController {
         phone: string | null;
         role: import(".prisma/client").$Enums.Role;
         refreshToken: string | null;
-        createdAt: Date;
-        updatedAt: Date;
         companyId: string | null;
         schoolId: string | null;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
     update(id: string, updateUserDto: any): Promise<{
         id: string;
@@ -26,10 +26,10 @@ export declare class UsersController {
         phone: string | null;
         role: import(".prisma/client").$Enums.Role;
         refreshToken: string | null;
-        createdAt: Date;
-        updatedAt: Date;
         companyId: string | null;
         schoolId: string | null;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
     remove(id: string): Promise<{
         id: string;
@@ -40,9 +40,9 @@ export declare class UsersController {
         phone: string | null;
         role: import(".prisma/client").$Enums.Role;
         refreshToken: string | null;
-        createdAt: Date;
-        updatedAt: Date;
         companyId: string | null;
         schoolId: string | null;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
 }
