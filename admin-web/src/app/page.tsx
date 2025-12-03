@@ -12,10 +12,13 @@ export default function Home() {
     if (!isLoading) {
       if (!isAuthenticated) {
         router.push('/login');
-      } else if (user?.role === 'platform_admin') {
-        router.push('/platform/overview');
-      } else if (user?.role === 'company_admin') {
-        router.push(`/company/${user.companyId}/overview`);
+      } else if (user) {
+        const role = user.role?.toUpperCase();
+        if (role === 'PLATFORM_ADMIN') {
+          router.push('/platform/overview');
+        } else if (role === 'COMPANY_ADMIN') {
+          router.push(`/company/${user.companyId}/overview`);
+        }
       }
     }
   }, [isAuthenticated, isLoading, user, router]);
