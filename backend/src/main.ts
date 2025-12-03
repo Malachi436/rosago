@@ -10,8 +10,14 @@ async function bootstrap() {
   // Set up global logger
   app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
   
-  // Enable CORS
-  app.enableCors();
+  // Enable CORS with specific origins
+  const corsOrigins = process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',')
+    : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173']; // Dev origins
+  app.enableCors({
+    origin: corsOrigins,
+    credentials: true,
+  });
 
   // Add request logging middleware
   app.use((req, res, next) => {
