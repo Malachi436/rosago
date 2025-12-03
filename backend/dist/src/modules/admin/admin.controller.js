@@ -33,6 +33,12 @@ let AdminController = class AdminController {
     async createSchool(companyId, createSchoolDto) {
         return this.adminService.createSchool(companyId, createSchoolDto);
     }
+    async getAllCompanies() {
+        return this.adminService.getAllCompanies();
+    }
+    async getCompanyById(companyId) {
+        return this.adminService.getCompanyById(companyId);
+    }
 };
 exports.AdminController = AdminController;
 __decorate([
@@ -67,6 +73,21 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "createSchool", null);
+__decorate([
+    (0, common_1.Get)('companies'),
+    (0, roles_decorator_1.Roles)('PLATFORM_ADMIN'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getAllCompanies", null);
+__decorate([
+    (0, common_1.Get)('companies/:companyId'),
+    (0, roles_decorator_1.Roles)('PLATFORM_ADMIN'),
+    __param(0, (0, common_1.Param)('companyId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getCompanyById", null);
 exports.AdminController = AdminController = __decorate([
     (0, common_1.Controller)('admin'),
     (0, common_1.UseGuards)(roles_guard_1.RolesGuard),

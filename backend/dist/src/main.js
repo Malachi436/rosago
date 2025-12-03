@@ -8,7 +8,13 @@ const http_exception_filter_1 = require("./common/filters/http-exception.filter"
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     app.useLogger(app.get(nest_winston_1.WINSTON_MODULE_NEST_PROVIDER));
-    app.enableCors();
+    const corsOrigins = process.env.CORS_ORIGINS
+        ? process.env.CORS_ORIGINS.split(',')
+        : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'];
+    app.enableCors({
+        origin: corsOrigins,
+        credentials: true,
+    });
     app.use((req, res, next) => {
         console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
         next();

@@ -69,6 +69,23 @@ let AdminService = class AdminService {
             },
         });
     }
+    async getAllCompanies() {
+        return this.prisma.company.findMany({
+            include: {
+                users: true,
+                schools: true,
+            },
+        });
+    }
+    async getCompanyById(companyId) {
+        return this.prisma.company.findUnique({
+            where: { id: companyId },
+            include: {
+                users: true,
+                schools: true,
+            },
+        });
+    }
 };
 exports.AdminService = AdminService;
 exports.AdminService = AdminService = __decorate([

@@ -37,8 +37,21 @@ export class BusesService {
     });
   }
 
-  async findAll(): Promise<Bus[]> {
-    return this.prisma.bus.findMany();
+  async findAll(): Promise<any[]> {
+    return this.prisma.bus.findMany({
+      include: {
+        driver: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
+      },
+    });
   }
 
   async remove(id: string): Promise<Bus> {

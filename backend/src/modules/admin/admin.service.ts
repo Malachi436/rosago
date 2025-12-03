@@ -80,4 +80,23 @@ export class AdminService {
       },
     });
   }
+
+  async getAllCompanies(): Promise<any> {
+    return this.prisma.company.findMany({
+      include: {
+        users: true,
+        schools: true,
+      },
+    });
+  }
+
+  async getCompanyById(companyId: string): Promise<any> {
+    return this.prisma.company.findUnique({
+      where: { id: companyId },
+      include: {
+        users: true,
+        schools: true,
+      },
+    });
+  }
 }

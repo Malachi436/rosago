@@ -8,6 +8,6 @@ export declare class BusesService {
     findByDriverId(driverId: string): Promise<Bus[]>;
     create(data: any): Promise<Bus>;
     update(id: string, data: any): Promise<Bus>;
-    findAll(): Promise<Bus[]>;
+    findAll(): Promise<any[]>;
     remove(id: string): Promise<Bus>;
 }

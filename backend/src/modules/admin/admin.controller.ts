@@ -31,4 +31,16 @@ export class AdminController {
   async createSchool(@Param('companyId') companyId: string, @Body() createSchoolDto: any) {
     return this.adminService.createSchool(companyId, createSchoolDto);
   }
+
+  @Get('companies')
+  @Roles('PLATFORM_ADMIN')
+  async getAllCompanies() {
+    return this.adminService.getAllCompanies();
+  }
+
+  @Get('companies/:companyId')
+  @Roles('PLATFORM_ADMIN')
+  async getCompanyById(@Param('companyId') companyId: string) {
+    return this.adminService.getCompanyById(companyId);
+  }
 }

@@ -6,4 +6,6 @@ export declare class AdminService {
     getCompanyStats(companyId: string): Promise<any>;
     createCompany(data: any): Promise<any>;
     createSchool(companyId: string, data: any): Promise<any>;
+    getAllCompanies(): Promise<any>;
+    getCompanyById(companyId: string): Promise<any>;
 }

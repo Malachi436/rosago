@@ -6,4 +6,6 @@ export declare class AdminController {
     getCompanyStats(companyId: string): Promise<any>;
     createCompany(createCompanyDto: any): Promise<any>;
     createSchool(companyId: string, createSchoolDto: any): Promise<any>;
+    getAllCompanies(): Promise<any>;
+    getCompanyById(companyId: string): Promise<any>;
 }

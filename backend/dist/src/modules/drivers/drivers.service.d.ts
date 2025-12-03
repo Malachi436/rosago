@@ -8,7 +8,7 @@ export declare class DriversService {
     findByLicense(license: string): Promise<Driver | null>;
     create(data: any): Promise<Driver>;
     update(id: string, data: any): Promise<Driver>;
-    findAll(): Promise<Driver[]>;
+    findAll(): Promise<any[]>;
     remove(id: string): Promise<Driver>;
     getTodayTrip(driverId: string): Promise<any>;
 }

@@ -43,7 +43,20 @@ let BusesService = class BusesService {
         });
     }
     async findAll() {
-        return this.prisma.bus.findMany();
+        return this.prisma.bus.findMany({
+            include: {
+                driver: {
+                    include: {
+                        user: {
+                            select: {
+                                firstName: true,
+                                lastName: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
     }
     async remove(id) {
         return this.prisma.bus.delete({
