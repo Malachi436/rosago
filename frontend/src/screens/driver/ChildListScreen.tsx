@@ -85,25 +85,35 @@ export default function ChildListScreen() {
     });
   }, [childrenOnTrip, filter]);
 
-  const handlePickup = async (childId: string) => {
+  const handlePickup = async (attendanceId: string) => {
     try {
-      setUpdatingChild(childId);
-      // API call would go here to update attendance status
-      console.log('Mark picked up:', childId);
+      setUpdatingChild(attendanceId);
+      await apiClient.patch(`/attendance/${attendanceId}`, {
+        status: 'PICKED_UP',
+        recordedBy: user?.id,
+      });
+      console.log('[ChildListScreen] Child marked as picked up');
+      // Refresh the trip data
+      await fetchTodayTrip();
     } catch (err: any) {
-      console.log('Error updating attendance:', err);
+      console.error('[ChildListScreen] Error updating attendance:', err);
     } finally {
       setUpdatingChild(null);
     }
   };
 
-  const handleDropoff = async (childId: string) => {
+  const handleDropoff = async (attendanceId: string) => {
     try {
-      setUpdatingChild(childId);
-      // API call would go here to update attendance status
-      console.log('Mark dropped off:', childId);
+      setUpdatingChild(attendanceId);
+      await apiClient.patch(`/attendance/${attendanceId}`, {
+        status: 'DROPPED',
+        recordedBy: user?.id,
+      });
+      console.log('[ChildListScreen] Child marked as dropped off');
+      // Refresh the trip data
+      await fetchTodayTrip();
     } catch (err: any) {
-      console.log('Error updating attendance:', err);
+      console.error('[ChildListScreen] Error updating attendance:', err);
     } finally {
       setUpdatingChild(null);
     }
@@ -307,11 +317,11 @@ export default function ChildListScreen() {
                         <View style={styles.actionButtons}>
                           {(!status || status === "PENDING") && (
                             <Pressable
-                              onPress={() => handlePickup(child.id)}
-                              disabled={updatingChild === child.id}
+                              onPress={() => handlePickup(attendance.id)}
+                              disabled={updatingChild === attendance.id}
                               style={[styles.actionButton, styles.pickupButton]}
                             >
-                              {updatingChild === child.id ? (
+                              {updatingChild === attendance.id ? (
                                 <ActivityIndicator size="small" color={colors.neutral.pureWhite} />
                               ) : (
                                 <>
@@ -328,11 +338,11 @@ export default function ChildListScreen() {
 
                           {status === "PICKED_UP" && (
                             <Pressable
-                              onPress={() => handleDropoff(child.id)}
-                              disabled={updatingChild === child.id}
+                              onPress={() => handleDropoff(attendance.id)}
+                              disabled={updatingChild === attendance.id}
                               style={[styles.actionButton, styles.dropoffButton]}
                             >
-                              {updatingChild === child.id ? (
+                              {updatingChild === attendance.id ? (
                                 <ActivityIndicator size="small" color={colors.neutral.pureWhite} />
                               ) : (
                                 <>
