@@ -30,6 +30,17 @@ export const colors = {
     pureWhite: "#FFFFFF",
     textPrimary: "#1D1D1F",
     textSecondary: "#6E6E6E",
+    darkGray: "#374151",
+    lightGray: "#9CA3AF",
+    gray: "#6B7280",
+  },
+
+  // Background Colors
+  background: {
+    dark: "#0F172A",
+    light: "#FFFFFF",
+    cream: "#FAF7F2",
+    surface: "#F3F4F6",
   },
 
   // Liquid Glass overlay
