@@ -1,10 +1,67 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { MapContainer, LiquidCard } from '../components';
 import { useAttendanceStore } from '../stores/attendanceStore';
+import { io } from 'socket.io-client';
+import { Location } from '../types';
 
 export const LiveTrackingScreen = () => {
   const { activeTrip } = useAttendanceStore();
+  const [busLocation, setBusLocation] = useState<Location | null>(null);
+  const [eta, setEta] = useState<string>('Calculating...');
+  const [distance, setDistance] = useState<string>('0 km');
+  const [socket, setSocket] = useState<any>(null);
+
+  useEffect(() => {
+    // Connect to Socket.IO
+    const newSocket = io('http://localhost:3000', {
+      transports: ['websocket'],
+      reconnection: true,
+    });
+
+    newSocket.on('connect', () => {
+      console.log('[LiveTracking] Connected to server');
+    });
+
+    // Listen for bus location updates
+    newSocket.on('bus_location', (data: any) => {
+      console.log('[LiveTracking] Received bus location:', data);
+      setBusLocation({
+        latitude: data.latitude,
+        longitude: data.longitude,
+      });
+    });
+
+    // Listen for location_update events (trip-specific)
+    newSocket.on('location_update', (data: any) => {
+      console.log('[LiveTracking] Location update:', data);
+      if (data.busId === activeTrip?.id) {
+        setBusLocation({
+          latitude: data.latitude,
+          longitude: data.longitude,
+        });
+        // Calculate mock ETA and distance based on timestamp
+        setEta(Math.floor(Math.random() * 10 + 5) + ' mins');
+        setDistance((Math.random() * 3 + 0.5).toFixed(1) + ' km');
+      }
+    });
+
+    newSocket.on('disconnect', () => {
+      console.log('[LiveTracking] Disconnected from server');
+    });
+
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.disconnect();
+    };
+  }, [activeTrip?.id]);
+
+  // Mock bus location if no real location yet
+  const displayBusLocation = busLocation || {
+    latitude: 5.603717,
+    longitude: -0.186964,
+  };
 
   return (
     <View style={styles.container}>
@@ -14,7 +71,7 @@ export const LiveTrackingScreen = () => {
         markers={[
           {
             id: 'bus',
-            coordinate: { latitude: 37.7749, longitude: -122.4194 },
+            coordinate: displayBusLocation,
             title: 'School Bus',
             description: activeTrip?.route || 'Route A',
           },
@@ -30,15 +87,15 @@ export const LiveTrackingScreen = () => {
           <View style={styles.stats}>
             <View style={styles.statItem}>
               <Text style={styles.statLabel}>ETA</Text>
-              <Text style={styles.statValue}>8 mins</Text>
+              <Text style={styles.statValue}>{eta}</Text>
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statLabel}>Distance</Text>
-              <Text style={styles.statValue}>2.4 km</Text>
+              <Text style={styles.statValue}>{distance}</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statLabel}>Next Stop</Text>
-              <Text style={styles.statValue}>Main St</Text>
+              <Text style={styles.statLabel}>Status</Text>
+              <Text style={styles.statValue}>Active</Text>
             </View>
           </View>
         </LiquidCard>
