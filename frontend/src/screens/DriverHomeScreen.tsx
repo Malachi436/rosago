@@ -7,17 +7,28 @@ import { useGPSStore } from '../stores/gpsStore';
 import { LiquidCard, LargeCTAButton } from '../components';
 import { Ionicons } from '@expo/vector-icons';
 import { gpsService } from '../services/gpsService';
+import { apiClient } from '../utils/api';
 import { io } from 'socket.io-client';
+
+interface Trip {
+  id: string;
+  bus: { id: string; plateNumber: string };
+  route: { name: string };
+  startTime: string;
+  attendances: Array<{ child: any }>;
+}
 
 export const DriverHomeScreen = () => {
   const navigation = useNavigation();
   const { user } = useAuthStore();
-  const { activeTrip, children, loadMockData } = useAttendanceStore();
+  const { activeTrip: mockTrip, children, loadMockData } = useAttendanceStore();
   const { isTracking, setTracking, error, setError } = useGPSStore();
   const [socket, setSocket] = useState<any>(null);
+  const [todayTrip, setTodayTrip] = useState<Trip | null>(null);
 
   useEffect(() => {
     loadMockData();
+    fetchTodayTrip();
     // Initialize socket connection
     const newSocket = io('http://192.168.100.8:3000', {
       transports: ['websocket'],
@@ -32,6 +43,24 @@ export const DriverHomeScreen = () => {
     };
   }, []);
 
+  const fetchTodayTrip = async () => {
+    try {
+      if (!user?.id) return;
+      const response = await apiClient.get<Trip>(
+        `/drivers/${user.id}/today-trip`
+      );
+      if (response) {
+        console.log('[DriverHome] Today trip fetched:', response);
+        setTodayTrip(response);
+      }
+    } catch (err: any) {
+      console.log('[DriverHome] No trip found for today:', err.message);
+    }
+  };
+
+  const activeTrip = todayTrip || mockTrip;
+  const busId = todayTrip?.bus.id || activeTrip?.id || 'unknown-bus';
+
   const toggleGPSTracking = async () => {
     try {
       if (isTracking) {
@@ -44,11 +73,10 @@ export const DriverHomeScreen = () => {
           Alert.alert('Error', 'Connection not ready');
           return;
         }
-        const busId = activeTrip?.id || 'unknown-bus';
         await gpsService.startTracking(socket, busId, 5000);
         setTracking(true);
         setError(null);
-        Alert.alert('Success', 'Location tracking started - sending updates every 5 seconds');
+        Alert.alert('Success', `Location tracking started for bus ${busId}`);
       }
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to toggle GPS';
