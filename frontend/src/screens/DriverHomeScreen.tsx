@@ -19,7 +19,7 @@ export const DriverHomeScreen = () => {
   useEffect(() => {
     loadMockData();
     // Initialize socket connection
-    const newSocket = io('http://localhost:3000', {
+    const newSocket = io('http://192.168.100.8:3000', {
       transports: ['websocket'],
       reconnection: true,
     });

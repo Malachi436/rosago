@@ -2,9 +2,8 @@ import axios, { AxiosInstance, AxiosError } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // API configuration
-// Use your computer's IP address for physical devices or emulators
-// For local development, change 192.168.1.X to your computer's actual IP
-const API_BASE_URL = 'http://192.168.100.3:3000';
+// Use localhost for web, or machine IP (192.168.100.8) for mobile/Expo Go
+const API_BASE_URL = 'http://192.168.100.8:3000';
 
 interface ApiRequestConfig {
   headers?: Record<string, string>;
