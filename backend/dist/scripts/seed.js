@@ -257,6 +257,18 @@ async function main() {
         },
     });
     console.log(`Created scheduled route: ${scheduledRoute.id}`);
+    const testingRoute = await prisma.scheduledRoute.create({
+        data: {
+            routeId: route.id,
+            driverId: driver.id,
+            busId: bus.id,
+            scheduledTime: '00:00',
+            recurringDays: ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'],
+            status: 'ACTIVE',
+            autoAssignChildren: true,
+        },
+    });
+    console.log(`Created 24/7 testing route: ${testingRoute.id}`);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const trip = await prisma.trip.create({
