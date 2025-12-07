@@ -5,14 +5,30 @@ import { apiClient } from '@/lib/api-client';
 import { useState, useEffect } from 'react';
 import { use } from 'react';
 
-interface ScheduledRoute {
+interface ScheduledRouteData {
   id: string;
-  routeName: string;
-  driverName: string;
-  busPlate: string;
-  departureTime: string;
-  days: string;
   status: string;
+  scheduledTime: string;
+  recurringDays: string[];
+  route: {
+    id: string;
+    name: string;
+    school?: {
+      name: string;
+    };
+    stops?: Array<any>;
+  };
+  driver: {
+    id: string;
+    user: {
+      firstName: string;
+      lastName: string;
+    };
+  };
+  bus: {
+    id: string;
+    plateNumber: string;
+  };
 }
 
 export default function ScheduledRoutesPage({
@@ -21,9 +37,10 @@ export default function ScheduledRoutesPage({
   params: Promise<{ companyId: string }>;
 }) {
   const { companyId } = use(params);
-  const [routes, setRoutes] = useState<ScheduledRoute[]>([]);
+  const [routes, setRoutes] = useState<ScheduledRouteData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
     fetchScheduledRoutes();
@@ -32,8 +49,9 @@ export default function ScheduledRoutesPage({
   const fetchScheduledRoutes = async () => {
     try {
       setLoading(true);
-      const data = await apiClient.get<ScheduledRoute[]>('/scheduled-routes');
+      const data = await apiClient.get<ScheduledRouteData[]>('/scheduled-routes');
       setRoutes(data || []);
+      setError('');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load scheduled routes');
     } finally {
@@ -56,12 +74,19 @@ export default function ScheduledRoutesPage({
   };
 
   const handleGenerateTodayTrips = async () => {
+    if (!window.confirm('Generate trips for today based on scheduled routes?')) {
+      return;
+    }
+
     try {
-      const result = await apiClient.post('/trips/generate-today', {});
-      alert(`Success! Generated trips for today`);
+      setGenerating(true);
+      await apiClient.post('/trips/generate-today', {});
+      alert('✅ Trips generated successfully for today!');
       await fetchScheduledRoutes();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Failed to generate trips');
+      alert('❌ ' + (err.response?.data?.message || 'Failed to generate trips'));
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -85,9 +110,10 @@ export default function ScheduledRoutesPage({
           </div>
           <button
             onClick={handleGenerateTodayTrips}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition"
+            disabled={generating}
+            className="bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white px-4 py-2 rounded-lg transition"
           >
-            📅 Generate Today's Trips
+            {generating ? '⏳ Generating...' : '📅 Generate Today\'s Trips'}
           </button>
         </div>
 
@@ -102,7 +128,7 @@ export default function ScheduledRoutesPage({
             <table className="w-full">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Route Name</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Route</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Driver</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Bus</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Time</th>
@@ -114,11 +140,13 @@ export default function ScheduledRoutesPage({
               <tbody>
                 {routes.map((route) => (
                   <tr key={route.id} className="border-b border-slate-200 hover:bg-slate-50">
-                    <td className="px-6 py-4 font-medium text-slate-900">{route.routeName}</td>
-                    <td className="px-6 py-4 text-slate-600">{route.driverName}</td>
-                    <td className="px-6 py-4 text-slate-600">{route.busPlate}</td>
-                    <td className="px-6 py-4 text-slate-600">{route.departureTime}</td>
-                    <td className="px-6 py-4 text-slate-600">{route.days}</td>
+                    <td className="px-6 py-4 font-medium text-slate-900">{route.route.name}</td>
+                    <td className="px-6 py-4 text-slate-600">
+                      {route.driver.user.firstName} {route.driver.user.lastName}
+                    </td>
+                    <td className="px-6 py-4 text-slate-600">{route.bus.plateNumber}</td>
+                    <td className="px-6 py-4 text-slate-600">{route.scheduledTime}</td>
+                    <td className="px-6 py-4 text-slate-600">{route.recurringDays.join(', ')}</td>
                     <td className="px-6 py-4">
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-semibold ${
