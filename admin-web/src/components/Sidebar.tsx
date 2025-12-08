@@ -23,6 +23,7 @@ export function Sidebar() {
       ]
     : [
         { label: 'Overview', href: `/company/${companyId}/overview` },
+        { label: 'Live Dashboard', href: `/company/${companyId}/live-dashboard` },
         { label: 'Scheduled Routes', href: `/company/${companyId}/scheduled-routes` },
         { label: 'Auto Generate Routes', href: `/company/${companyId}/auto-generate-routes` },
         { label: 'Children', href: `/company/${companyId}/children` },
