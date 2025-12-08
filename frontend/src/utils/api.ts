@@ -82,10 +82,12 @@ class ApiClient {
               // Update authorization header
               originalRequest.headers.Authorization = `Bearer ${access_token}`;
 
-              // Reconnect socket with new token
+              // Reconnect socket with new token after a small delay
               console.log('[API Client] Token refreshed, reconnecting socket');
               socketService.disconnect();
-              await socketService.connect();
+              setTimeout(() => {
+                socketService.connect();
+              }, 500); // Wait 500ms for token to be properly stored
 
               // Retry original request
               this.isRefreshing = false;
