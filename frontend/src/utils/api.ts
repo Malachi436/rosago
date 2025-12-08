@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { socketService } from './socket';
 
 // API configuration
 // Development environment: http://192.168.100.8:8081
@@ -80,6 +81,11 @@ class ApiClient {
 
               // Update authorization header
               originalRequest.headers.Authorization = `Bearer ${access_token}`;
+
+              // Reconnect socket with new token
+              console.log('[API Client] Token refreshed, reconnecting socket');
+              socketService.disconnect();
+              await socketService.connect();
 
               // Retry original request
               this.isRefreshing = false;
