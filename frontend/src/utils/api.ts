@@ -20,6 +20,7 @@ class ApiClient {
   private axiosInstance: AxiosInstance;
   private isRefreshing = false;
   private refreshSubscribers: Array<(token: string) => void> = [];
+  private onAuthFailure: (() => void) | null = null;
 
   constructor() {
     console.log('[API Client] Initializing with base URL:', API_BASE_URL);
@@ -87,9 +88,13 @@ class ApiClient {
               return this.axiosInstance(originalRequest);
             } catch (refreshError) {
               this.isRefreshing = false;
-              // Clear tokens and redirect to login
+              // Clear tokens
               await AsyncStorage.removeItem('access_token');
               await AsyncStorage.removeItem('refresh_token');
+              // Notify app to logout
+              if (this.onAuthFailure) {
+                this.onAuthFailure();
+              }
               throw refreshError;
             }
           } else {
@@ -125,6 +130,10 @@ class ApiClient {
   async clearTokens() {
     await AsyncStorage.removeItem('access_token');
     await AsyncStorage.removeItem('refresh_token');
+  }
+
+  setAuthFailureCallback(callback: () => void) {
+    this.onAuthFailure = callback;
   }
 
   async get<T>(endpoint: string, config?: ApiRequestConfig): Promise<T> {

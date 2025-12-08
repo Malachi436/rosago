@@ -8,6 +8,7 @@ import React, { useEffect, useState } from "react";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useAuthStore } from "../stores/authStore";
+import { apiClient } from "../utils/api";
 import { colors } from "../theme";
 
 // Import screens
@@ -31,7 +32,16 @@ export default function RootNavigator() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const role = useAuthStore((s) => s.role);
   const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
   const [isHydrated, setIsHydrated] = useState(false);
+
+  // Set up auth failure callback
+  useEffect(() => {
+    apiClient.setAuthFailureCallback(() => {
+      console.log('[RootNavigator] Auth failure detected - logging out');
+      logout();
+    });
+  }, [logout]);
 
   // Wait for persist middleware to hydrate
   useEffect(() => {
