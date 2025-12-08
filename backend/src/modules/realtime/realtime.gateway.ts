@@ -2,6 +2,7 @@ import { WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDiscon
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { Redis } from 'ioredis';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @WebSocketGateway({
   cors: {
@@ -14,8 +15,10 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   private readonly redis: Redis;
   private readonly connectedUsers = new Map<string, string>(); // socketId -> userId
+  private readonly gpsHeartbeatCounter = new Map<string, number>(); // busId -> heartbeat count
+  private readonly HEARTBEAT_THRESHOLD = 5; // Save to DB every 5 heartbeats
 
-  constructor(private jwtService: JwtService) {
+  constructor(private jwtService: JwtService, private prisma: PrismaService) {
     this.redis = new Redis(process.env.REDIS_URL);
     this.initializeRedisSubscriber();
   }
@@ -147,11 +150,40 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
       busId: data.busId,
       latitude: data.latitude,
       longitude: data.longitude,
-      speed: data.speed,
+      speed: data.speed || 0,
       heading: data.heading,
       accuracy: data.accuracy,
       timestamp: data.timestamp || new Date().toISOString(),
     };
+
+    // Store in Redis for real-time access
+    try {
+      await this.redis.setex(`bus:${data.busId}:location`, 300, JSON.stringify(locationData));
+      console.log(`[GPS Update] Stored in Redis for bus ${data.busId}`);
+    } catch (error) {
+      console.warn('[GPS Update] Redis unavailable, continuing without cache', error);
+    }
+
+    // Save to database every N heartbeats
+    const heartbeatCount = (this.gpsHeartbeatCounter.get(data.busId) || 0) + 1;
+    this.gpsHeartbeatCounter.set(data.busId, heartbeatCount);
+    
+    if (heartbeatCount % this.HEARTBEAT_THRESHOLD === 0) {
+      try {
+        await this.prisma.busLocation.create({
+          data: {
+            busId: data.busId,
+            latitude: data.latitude,
+            longitude: data.longitude,
+            speed: data.speed || 0,
+            timestamp: new Date(locationData.timestamp),
+          },
+        });
+        console.log(`[GPS Update] Saved to database for bus ${data.busId}`);
+      } catch (error) {
+        console.error('[GPS Update] Database save failed:', error);
+      }
+    }
 
     // Broadcast to bus-specific room
     const roomSize = this.server.sockets.adapter.rooms.get(`bus:${data.busId}`)?.size || 0;

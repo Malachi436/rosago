@@ -1,12 +1,16 @@
 import { OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
+import { PrismaService } from '../../prisma/prisma.service';
 export declare class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private jwtService;
+    private prisma;
     server: Server;
     private readonly redis;
     private readonly connectedUsers;
-    constructor(jwtService: JwtService);
+    private readonly gpsHeartbeatCounter;
+    private readonly HEARTBEAT_THRESHOLD;
+    constructor(jwtService: JwtService, prisma: PrismaService);
     private initializeRedisSubscriber;
     handleConnection(client: Socket): Promise<void>;
     handleDisconnect(client: Socket): void;
