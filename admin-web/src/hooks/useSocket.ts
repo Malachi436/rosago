@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000';
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://192.168.100.8:3000';
 
 export interface BusLocation {
   busId: string;
@@ -58,7 +58,12 @@ export function useSocket(companyId: string | null) {
     });
 
     socketRef.current.on('connect_error', (error) => {
-      console.error('[Socket] Connection error:', error.message);
+      console.error('[Socket] Connection error:', error.message || error);
+      setConnected(false);
+    });
+
+    socketRef.current.on('error', (error) => {
+      console.error('[Socket] Socket error:', error);
       setConnected(false);
     });
 
