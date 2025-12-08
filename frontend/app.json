@@ -14,14 +14,24 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.rosago.app"
+      "bundleIdentifier": "com.rosago.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "ROSAgo needs your location to track the school bus in real-time and provide accurate pickup/drop-off updates.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "ROSAgo needs continuous access to your location to track the school bus even when the app is in the background.",
+        "UIBackgroundModes": ["location"]
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.jpeg",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.rosago.app"
+      "package": "com.rosago.app",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.jpeg",

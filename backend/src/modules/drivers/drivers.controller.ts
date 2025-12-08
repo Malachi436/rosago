@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, ForbiddenException } from '@nestjs/common';
 import { DriversService } from './drivers.service';
 import { Roles } from '../roles/roles.decorator';
 import { RolesGuard } from '../roles/roles.guard';
@@ -24,8 +24,16 @@ export class DriversController {
 
   @Get(':id/today-trip')
   @Roles('DRIVER')
-  async getTodayTrip(@Param('id') userId: string) {
+  async getTodayTrip(@Param('id') userId: string, @Req() req) {
     console.log('[DriversController] getTodayTrip called with userId:', userId);
+    console.log('[DriversController] Authenticated user:', req.user);
+    
+    // Security: Ensure the authenticated user matches the requested user ID
+    if (req.user.userId !== userId) {
+      console.warn('[DriversController] User mismatch - token userId:', req.user.userId, 'requested:', userId);
+      throw new ForbiddenException('You can only access your own trip data');
+    }
+    
     // Find the driver record by user ID
     const driver = await this.driversService.findByUserId(userId);
     console.log('[DriversController] Found driver:', driver);
