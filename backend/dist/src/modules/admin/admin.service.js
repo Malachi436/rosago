@@ -172,6 +172,22 @@ let AdminService = class AdminService {
                     },
                 },
             },
+            select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                parentId: true,
+                schoolId: true,
+                pickupType: true,
+                pickupDescription: true,
+                homeLatitude: true,
+                homeLongitude: true,
+                parent: true,
+                school: true,
+                createdAt: true,
+                updatedAt: true,
+            },
         });
     }
     async getChildrenPaymentStatus(companyId) {

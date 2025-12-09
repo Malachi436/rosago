@@ -366,7 +366,7 @@ export function ROSAgoMapClient({
         const markerElement = createPickupMarkerElement(pickup.childName, pickupId === selectedPickupId);
         const marker = new maplibregl.Marker({ element: markerElement })
           .setLngLat([pickup.longitude, pickup.latitude])
-          .addTo(map.current);
+          .addTo(map.current!);
 
         // Create popup
         const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`

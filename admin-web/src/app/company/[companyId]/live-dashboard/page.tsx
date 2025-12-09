@@ -48,6 +48,15 @@ interface School {
   longitude?: number;
 }
 
+interface Pickup {
+  childId: string;
+  childName: string;
+  parentName: string;
+  latitude: number;
+  longitude: number;
+  pickupType: string;
+}
+
 export default function LiveDashboardPage({ params }: { params: Promise<{ companyId: string }> }) {
   const resolvedParams = use(params);
   const companyId = resolvedParams.companyId;
@@ -55,6 +64,7 @@ export default function LiveDashboardPage({ params }: { params: Promise<{ compan
   const [activeTrips, setActiveTrips] = useState<Trip[]>([]);
   const [schools, setSchools] = useState<School[]>([]);
   const [restLocations, setRestLocations] = useState<{ [key: string]: Location }>({});
+  const [pickups, setPickups] = useState<Pickup[]>([]);
   const [selectedBusId, setSelectedBusId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -78,6 +88,7 @@ export default function LiveDashboardPage({ params }: { params: Promise<{ compan
   useEffect(() => {
     fetchActiveTrips();
     fetchSchools();
+    fetchPickups();
 
     // Poll for updates every 10 seconds as fallback
     const interval = setInterval(() => {
@@ -132,6 +143,26 @@ export default function LiveDashboardPage({ params }: { params: Promise<{ compan
       console.error('Error loading trips:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPickups = async () => {
+    try {
+      const response = await apiClient.get(`/admin/company/${companyId}/children`);
+      const children = Array.isArray(response) ? response : [];
+      const pickupList = children
+        .filter((child: any) => child.homeLatitude && child.homeLongitude)
+        .map((child: any) => ({
+          childId: child.id,
+          childName: `${child.firstName} ${child.lastName}`,
+          parentName: `${child.parent.firstName} ${child.parent.lastName}`,
+          latitude: child.homeLatitude,
+          longitude: child.homeLongitude,
+          pickupType: child.pickupType,
+        }));
+      setPickups(pickupList);
+    } catch (err) {
+      console.log('Failed to load pickups');
     }
   };
 
@@ -204,6 +235,7 @@ export default function LiveDashboardPage({ params }: { params: Promise<{ compan
                   latitude: s.latitude!,
                   longitude: s.longitude!,
                 }))}
+                pickups={pickups}
                 selectedBusId={selectedBusId || undefined}
                 onBusSelect={(busId) => setSelectedBusId(busId)}
                 height="500px"
