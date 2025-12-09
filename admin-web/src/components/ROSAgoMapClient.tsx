@@ -296,11 +296,28 @@ export function ROSAgoMapClient({
       } else {
         console.log('[ROSAgoMap] Creating NEW marker for bus:', busId, 'at', lngLat);
         const el = createBusMarkerElement(loc.plateNumber, isSelected);
-        el.onclick = () => onBusSelect?.(busId);
+        
+        // Create popup with bus info
+        const popup = new maplibregl.Popup({ 
+          offset: 25,
+          closeButton: true,
+          closeOnClick: false
+        }).setHTML(`
+          <div style="padding: 12px; font-family: Arial, sans-serif; min-width: 180px;">
+            <h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: bold; color: #333;">🚌 ${loc.plateNumber || 'Bus'}</h3>
+            <p style="margin: 4px 0; font-size: 12px; color: #666;"><strong>Driver:</strong> ${loc.driverName || 'Unknown'}</p>
+            <p style="margin: 4px 0; font-size: 12px; color: #666;"><strong>Speed:</strong> ${loc.speed ? loc.speed + ' km/h' : 'N/A'}</p>
+            <p style="margin: 4px 0; font-size: 11px; color: #999;">📍 ${loc.latitude.toFixed(4)}, ${loc.longitude.toFixed(4)}</p>
+            ${loc.timestamp ? `<p style="margin: 4px 0; font-size: 10px; color: #aaa;">Last update: ${new Date(loc.timestamp).toLocaleTimeString()}</p>` : ''}
+          </div>
+        `);
 
         const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
           .setLngLat(lngLat)
+          .setPopup(popup)
           .addTo(map.current!);
+
+        el.onclick = () => onBusSelect?.(busId);
 
         busMarkers.current[busId] = marker;
         console.log('[ROSAgoMap] Marker created and added to map');
