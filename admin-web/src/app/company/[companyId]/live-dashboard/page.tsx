@@ -85,21 +85,6 @@ export default function LiveDashboardPage({ params }: { params: Promise<{ compan
     };
   });
 
-  useEffect(() => {
-    fetchActiveTrips();
-    fetchSchools();
-    fetchPickups();
-
-    // Poll for updates every 10 seconds as fallback
-    const interval = setInterval(() => {
-      if (!connected) {
-        fetchActiveTrips();
-      }
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, [companyId, connected]);
-
   const fetchSchools = async () => {
     try {
       const response = await apiClient.get(`/admin/company/${companyId}/schools`);
@@ -167,6 +152,21 @@ export default function LiveDashboardPage({ params }: { params: Promise<{ compan
       console.log('Failed to load pickups', err);
     }
   };
+
+  useEffect(() => {
+    fetchActiveTrips();
+    fetchSchools();
+    fetchPickups();
+
+    // Poll for updates every 10 seconds as fallback
+    const interval = setInterval(() => {
+      if (!connected) {
+        fetchActiveTrips();
+      }
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [companyId, connected]);
 
   const selectedBus = selectedBusId ? activeTrips.find((t) => t.bus.id === selectedBusId)?.bus : null;
 
