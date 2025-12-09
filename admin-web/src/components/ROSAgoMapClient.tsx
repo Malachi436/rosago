@@ -383,7 +383,7 @@ export function ROSAgoMapClient({
 
         markerElement.addEventListener('click', () => {
           onPickupSelect?.(pickupId);
-          marker.togglePopup();
+          popup.addTo(map.current!);
         });
 
         pickupMarkers.current[pickupId] = marker;
