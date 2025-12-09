@@ -140,7 +140,16 @@ export class AdminService {
       where: {
         school: { companyId },
       },
-      include: {
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        parentId: true,
+        schoolId: true,
+        pickupType: true,
+        pickupDescription: true,
+        homeLatitude: true,
+        homeLongitude: true,
         parent: {
           select: {
             id: true,
@@ -156,20 +165,6 @@ export class AdminService {
             name: true,
           },
         },
-      },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        parentId: true,
-        schoolId: true,
-        pickupType: true,
-        pickupDescription: true,
-        homeLatitude: true,
-        homeLongitude: true,
-        parent: true,
-        school: true,
         createdAt: true,
         updatedAt: true,
       },
