@@ -60,6 +60,16 @@ let TripsService = class TripsService {
                 },
             },
             include: {
+                bus: {
+                    include: {
+                        driver: {
+                            include: {
+                                user: true,
+                            },
+                        },
+                    },
+                },
+                route: true,
                 histories: true,
                 attendances: {
                     where: { childId: childId },

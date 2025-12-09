@@ -64,6 +64,7 @@ const realtime_module_1 = require("./modules/realtime/realtime.module");
 const trip_exceptions_module_1 = require("./modules/trip-exceptions/trip-exceptions.module");
 const early_pickup_module_1 = require("./modules/early-pickup/early-pickup.module");
 const scheduled_routes_module_1 = require("./modules/scheduled-routes/scheduled-routes.module");
+const health_module_1 = require("./modules/health/health.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -100,6 +101,7 @@ exports.AppModule = AppModule = __decorate([
             trip_exceptions_module_1.TripExceptionsModule,
             early_pickup_module_1.EarlyPickupModule,
             scheduled_routes_module_1.ScheduledRoutesModule,
+            health_module_1.HealthModule,
         ],
         controllers: [],
         providers: [],

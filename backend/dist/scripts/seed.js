@@ -40,11 +40,13 @@ async function main() {
     console.log('Starting database seed...');
     console.log('Clearing existing data...');
     await prisma.childAttendance.deleteMany();
+    await prisma.tripHistory.deleteMany();
     await prisma.trip.deleteMany();
     await prisma.child.deleteMany();
     await prisma.scheduledRoute.deleteMany();
     await prisma.stop.deleteMany();
     await prisma.route.deleteMany();
+    await prisma.busLocation.deleteMany();
     await prisma.bus.deleteMany();
     await prisma.driver.deleteMany();
     await prisma.user.deleteMany();
@@ -281,6 +283,22 @@ async function main() {
         data: {
             childId: child2.id,
             tripId: trip.id,
+            status: 'PICKED_UP',
+            recordedBy: driverUser.id,
+        },
+    });
+    await prisma.childAttendance.create({
+        data: {
+            childId: child1.id,
+            tripId: testTrip.id,
+            status: 'PICKED_UP',
+            recordedBy: driverUser.id,
+        },
+    });
+    await prisma.childAttendance.create({
+        data: {
+            childId: child2.id,
+            tripId: testTrip.id,
             status: 'PICKED_UP',
             recordedBy: driverUser.id,
         },

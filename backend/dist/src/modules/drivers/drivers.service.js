@@ -156,13 +156,10 @@ let DriversService = class DriversService {
         today.setHours(0, 0, 0, 0);
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
-        const trip = await this.prisma.trip.findFirst({
+        let trip = await this.prisma.trip.findFirst({
             where: {
                 driverId,
-                startTime: {
-                    gte: today,
-                    lt: tomorrow,
-                },
+                status: 'IN_PROGRESS',
             },
             include: {
                 bus: {
@@ -182,6 +179,34 @@ let DriversService = class DriversService {
                 },
             },
         });
+        if (!trip) {
+            trip = await this.prisma.trip.findFirst({
+                where: {
+                    driverId,
+                    startTime: {
+                        gte: today,
+                        lt: tomorrow,
+                    },
+                },
+                include: {
+                    bus: {
+                        include: {
+                            locations: true,
+                        },
+                    },
+                    route: {
+                        include: {
+                            stops: true,
+                        },
+                    },
+                    attendances: {
+                        include: {
+                            child: true,
+                        },
+                    },
+                },
+            });
+        }
         if (!trip)
             return null;
         if (trip.attendances && trip.attendances.length > 0) {

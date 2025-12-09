@@ -1,0 +1,859 @@
+# ROSAGO TESTING PLAYBOOK
+# ========================
+# This file defines all testing procedures for the ROSAgo system.
+# When user says "run tests" or "test the app", read this file and execute.
+
+## PREREQUISITES
+## =============
+
+### Required NPM Packages (Backend)
+```
+cd backend
+npm install --save-dev @nestjs/testing supertest @types/supertest
+```
+
+### Required Global Tools
+```
+npm install -g k6 artillery
+```
+
+### Test Credentials (from seed data)
+- Platform Admin: platform@saferide.com / Test@1234
+- Company Admin: admin@saferide.com / Test@1234  
+- Driver: driver@saferide.com / Test@1234
+- Parent: parent@test.com / Test@1234
+
+### Required Services Running
+- PostgreSQL on port 5432
+- Redis on port 6379
+- Backend on port 3000
+- Admin-web on port 3001
+- Frontend (Expo) for mobile testing
+
+---
+
+## TEST CATEGORIES
+## ===============
+
+### CATEGORY 1: UNIT TESTS
+Location: backend/test/unit/
+
+#### 1.1 Auth Service Tests
+File: backend/test/unit/auth.service.spec.ts
+Tests:
+- validateUser() returns user for valid credentials
+- validateUser() returns null for invalid password
+- login() returns access and refresh tokens
+- signup() creates new parent user
+- signup() throws for duplicate email
+- refreshToken() generates new tokens
+- validateToken() decodes JWT correctly
+
+#### 1.2 Attendance Service Tests
+File: backend/test/unit/attendance.service.spec.ts
+Tests:
+- updateAttendance() changes status to PICKED_UP
+- updateAttendance() changes status to DROPPED
+- updateAttendance() reverts to previous status
+- updateAttendance() creates notification for parent
+- updateAttendance() emits WebSocket event
+- getAttendanceByTrip() returns all children on trip
+
+#### 1.3 Payments Service Tests
+File: backend/test/unit/payments.service.spec.ts
+Tests:
+- createPaymentIntent() creates pending payment
+- processWebhook() validates signature
+- processWebhook() updates payment status
+- getPaymentHistory() returns user payments
+- Company balance increases on successful payment
+
+#### 1.4 Trips Service Tests
+File: backend/test/unit/trips.service.spec.ts
+Tests:
+- generateTodayTrips() creates trips from scheduled routes
+- getActiveTrips() returns only in-progress trips
+- getTripById() includes attendances and children
+- completeTrip() sets status to COMPLETED
+
+#### 1.5 GPS Service Tests
+File: backend/test/unit/gps.service.spec.ts
+Tests:
+- saveHeartbeat() stores location in Redis
+- saveHeartbeat() broadcasts via WebSocket
+- getLatestLocation() retrieves from Redis
+- Location expires after configured TTL
+
+---
+
+### CATEGORY 2: INTEGRATION TESTS (API Endpoints)
+Location: backend/test/integration/
+
+#### 2.1 Auth Endpoints
+File: backend/test/integration/auth.e2e-spec.ts
+
+Test: POST /auth/login - Valid credentials
+Request: { email: "parent@test.com", password: "Test@1234" }
+Expected: 200, { accessToken, refreshToken, user }
+
+Test: POST /auth/login - Invalid password
+Request: { email: "parent@test.com", password: "wrong" }
+Expected: 401, { message: "Invalid credentials" }
+
+Test: POST /auth/signup - Create parent
+Request: { email: "new@test.com", password: "Test@1234", firstName: "New", lastName: "User" }
+Expected: 201, { user, accessToken }
+
+Test: POST /auth/signup - Duplicate email
+Request: { email: "parent@test.com", password: "Test@1234", firstName: "New", lastName: "User" }
+Expected: 409, { message: "Email already exists" }
+
+Test: POST /auth/refresh - Valid refresh token
+Request: { refreshToken: "<valid_token>" }
+Expected: 200, { accessToken, refreshToken }
+
+#### 2.2 Attendance Endpoints
+File: backend/test/integration/attendance.e2e-spec.ts
+
+Test: PATCH /attendance/:id - Mark picked up (as driver)
+Auth: Driver JWT
+Request: { status: "PICKED_UP", recordedBy: "<driverId>" }
+Expected: 200, { status: "PICKED_UP" }
+Side Effect: Notification created, WebSocket event emitted
+
+Test: PATCH /attendance/:id - Revert to pending (as driver)
+Auth: Driver JWT
+Request: { status: "PENDING", recordedBy: "<driverId>" }
+Expected: 200, { status: "PENDING" }
+
+Test: PATCH /attendance/:id - Unauthorized (as parent)
+Auth: Parent JWT
+Request: { status: "PICKED_UP" }
+Expected: 403, { message: "Forbidden" }
+
+Test: GET /attendance/trip/:tripId
+Auth: Driver JWT
+Expected: 200, [{ child, status, ... }]
+
+#### 2.3 Driver Endpoints
+File: backend/test/integration/drivers.e2e-spec.ts
+
+Test: GET /drivers/:id/today-trip
+Auth: Driver JWT (matching ID)
+Expected: 200, { trip with attendances }
+
+Test: GET /drivers/:id/today-trip - No trip today
+Auth: Driver JWT
+Expected: 200, null or { message: "No trip scheduled" }
+
+#### 2.4 Trips Endpoints
+File: backend/test/integration/trips.e2e-spec.ts
+
+Test: GET /trips/company/:companyId/active
+Auth: Company Admin JWT
+Expected: 200, [{ active trips with driver, bus, route }]
+
+Test: POST /trips/generate-today
+Auth: Company Admin JWT
+Expected: 201, { generated: X, skipped: Y }
+
+#### 2.5 Payment Endpoints
+File: backend/test/integration/payments.e2e-spec.ts
+
+Test: POST /payments/create-intent
+Auth: Parent JWT
+Request: { parentId, amount: 150, currency: "GHS" }
+Expected: 201, { id, hubtleRef, status: "pending" }
+
+Test: POST /payments/webhook
+Headers: x-hubtle-signature: <valid_signature>
+Request: { ref: "<hubtleRef>", status: "success" }
+Expected: 200, { received: true }
+Side Effect: Payment status updated, company balance increased
+
+Test: GET /payments/history/:parentId
+Auth: Parent JWT
+Expected: 200, [{ payments ordered by date }]
+
+#### 2.6 Notification Endpoints
+File: backend/test/integration/notifications.e2e-spec.ts
+
+Test: GET /notifications/user/:userId
+Auth: Parent JWT
+Expected: 200, [{ notifications with type, title, message }]
+
+Test: Notifications include PICKUP/DROPOFF types
+Expected: Notifications have displayable type field
+
+---
+
+### CATEGORY 3: LOAD TESTS
+Location: backend/test/load/
+
+#### 3.1 Morning Rush Simulation
+File: backend/test/load/morning-rush.js
+
+Scenario: Simulate typical morning with 50 parents and 20 drivers
+Duration: 8 minutes
+Stages:
+- 0-1min: Ramp up to 50 parents checking tracking
+- 1-4min: Maintain 50 parents, 20 drivers sending GPS
+- 4-5min: Spike to 100 parents (school arrival time)
+- 5-7min: Maintain peak load
+- 7-8min: Ramp down
+
+Metrics to Monitor:
+- Response time p95 < 500ms
+- Error rate < 1%
+- WebSocket connections stable
+- Database queries < 100ms
+
+Command:
+```
+k6 run backend/test/load/morning-rush.js
+```
+
+#### 3.2 Payment Spike Simulation
+File: backend/test/load/payment-spike.js
+
+Scenario: Month-start payment rush
+Duration: 5 minutes
+Load: 50 concurrent payment requests
+
+Metrics to Monitor:
+- Payment creation p95 < 1s
+- No duplicate payments
+- Webhook processing queue doesn't overflow
+
+Command:
+```
+k6 run backend/test/load/payment-spike.js
+```
+
+#### 3.3 GPS Flood Test
+File: backend/test/load/gps-flood.js
+
+Scenario: All drivers sending GPS simultaneously
+Duration: 3 minutes
+Load: 100 drivers, updates every 5 seconds
+
+Metrics to Monitor:
+- Redis write latency < 10ms
+- WebSocket broadcast delay < 100ms
+- No dropped connections
+
+Command:
+```
+k6 run backend/test/load/gps-flood.js
+```
+
+---
+
+### CATEGORY 4: WEBSOCKET STRESS TESTS
+Location: backend/test/websocket/
+
+#### 4.1 GPS Real-time Stress
+File: backend/test/websocket/gps-stress.yml
+
+Scenario: 200 concurrent WebSocket connections
+Duration: 2 minutes
+Each connection:
+- Authenticates with JWT
+- Sends GPS update every 5 seconds
+- Receives location broadcasts
+
+Command:
+```
+artillery run backend/test/websocket/gps-stress.yml
+```
+
+#### 4.2 Notification Storm
+File: backend/test/websocket/notification-storm.yml
+
+Scenario: 100 parents connected, driver marks 50 children
+Expected: All 50 notifications delivered within 2 seconds
+
+Command:
+```
+artillery run backend/test/websocket/notification-storm.yml
+```
+
+---
+
+### CATEGORY 5: E2E TESTS (TestSprite)
+Platform: testsprite.com
+Target: http://localhost:3001 (admin-web)
+
+#### 5.1 Company Admin Flows
+- Login as company admin
+- Navigate to all menu items
+- View drivers list
+- Create/edit payment plan
+- View live tracking dashboard
+- Request payout (when implemented)
+
+#### 5.2 Platform Admin Flows
+- Login as platform admin
+- View all companies
+- View all schools
+- Check analytics dashboard
+- View company balances
+
+#### 5.3 Edge Cases
+- Session timeout handling
+- Invalid form submissions
+- Network error recovery
+- Role-based access restrictions
+
+---
+
+## EXECUTION CHECKLIST
+## ===================
+
+### Before Running Tests
+1. [ ] PostgreSQL running on 5432
+2. [ ] Redis running on 6379
+3. [ ] Backend built: cd backend && npm run build
+4. [ ] Backend running: npm run start:dev
+5. [ ] Database seeded: npm run seed
+6. [ ] Test dependencies installed
+
+### Running Unit Tests
+```
+cd backend
+npm test
+```
+Expected: All tests pass, coverage > 80%
+
+### Running Integration Tests
+```
+cd backend
+npm run test:e2e
+```
+Expected: All API tests pass
+
+### Running Load Tests
+```
+cd backend
+k6 run test/load/morning-rush.js
+k6 run test/load/payment-spike.js
+k6 run test/load/gps-flood.js
+```
+Expected: p95 < 500ms, error rate < 1%
+
+### Running WebSocket Tests
+```
+cd backend
+artillery run test/websocket/gps-stress.yml
+artillery run test/websocket/notification-storm.yml
+```
+Expected: No dropped connections, latency < 100ms
+
+---
+
+## TEST FILE TEMPLATES
+## ===================
+
+### Jest Unit Test Template
+```typescript
+import { Test, TestingModule } from '@nestjs/testing';
+import { ServiceName } from './service-name.service';
+import { PrismaService } from '../../prisma/prisma.service';
+
+describe('ServiceName', () => {
+  let service: ServiceName;
+  let prisma: PrismaService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        ServiceName,
+        {
+          provide: PrismaService,
+          useValue: {
+            // Mock methods
+          },
+        },
+      ],
+    }).compile();
+
+    service = module.get<ServiceName>(ServiceName);
+    prisma = module.get<PrismaService>(PrismaService);
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+
+  // Add test cases here
+});
+```
+
+### Supertest Integration Test Template
+```typescript
+import { Test, TestingModule } from '@nestjs/testing';
+import { INestApplication } from '@nestjs/common';
+import * as request from 'supertest';
+import { AppModule } from '../src/app.module';
+
+describe('ControllerName (e2e)', () => {
+  let app: INestApplication;
+  let authToken: string;
+
+  beforeAll(async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+    await app.init();
+
+    // Get auth token
+    const loginRes = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ email: 'test@test.com', password: 'Test@1234' });
+    authToken = loginRes.body.accessToken;
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it('/endpoint (GET)', () => {
+    return request(app.getHttpServer())
+      .get('/endpoint')
+      .set('Authorization', `Bearer ${authToken}`)
+      .expect(200);
+  });
+});
+```
+
+### k6 Load Test Template
+```javascript
+import http from 'k6/http';
+import { check, sleep } from 'k6';
+
+export const options = {
+  vus: 50,
+  duration: '2m',
+  thresholds: {
+    http_req_duration: ['p(95)<500'],
+    http_req_failed: ['rate<0.01'],
+  },
+};
+
+const BASE_URL = 'http://localhost:3000';
+const TOKEN = __ENV.AUTH_TOKEN;
+
+export default function () {
+  const res = http.get(`${BASE_URL}/endpoint`, {
+    headers: { Authorization: `Bearer ${TOKEN}` },
+  });
+  
+  check(res, {
+    'status is 200': (r) => r.status === 200,
+    'response time < 500ms': (r) => r.timings.duration < 500,
+  });
+  
+  sleep(1);
+}
+```
+
+### Artillery WebSocket Template
+```yaml
+config:
+  target: "ws://localhost:3000"
+  phases:
+    - duration: 60
+      arrivalRate: 5
+  
+scenarios:
+  - name: "WebSocket Test"
+    engine: ws
+    flow:
+      - send:
+          json:
+            event: "authenticate"
+            token: "{{ $env.AUTH_TOKEN }}"
+      - think: 1
+      - send:
+          json:
+            event: "test_event"
+            data: { test: true }
+      - think: 5
+```
+
+---
+
+## CRITICAL TEST SCENARIOS
+## =======================
+
+### Scenario: Complete Attendance Flow
+1. Driver logs in
+2. Driver views today's trip with children
+3. Driver marks Child A as PICKED_UP
+4. Verify: Notification created in DB
+5. Verify: WebSocket event emitted
+6. Parent receives real-time notification
+7. Driver marks Child A as DROPPED
+8. Verify: Status updated, notification sent
+9. Driver reverts Child A to PICKED_UP
+10. Verify: Status reverted, notification sent
+
+### Scenario: Payment Flow (when Hubtel ready)
+1. Parent selects payment plan
+2. Parent enters MoMo number
+3. Payment intent created
+4. Hubtel sends prompt to phone
+5. User confirms payment
+6. Webhook received
+7. Payment status updated to SUCCESS
+8. Company balance increased
+9. Parent sees payment in history
+
+### Scenario: Concurrent GPS Updates
+1. 20 drivers connected via WebSocket
+2. All send GPS every 5 seconds
+3. Verify: All updates stored in Redis
+4. Verify: All broadcasts received by admin dashboard
+5. Verify: No data loss under load
+
+### Scenario: Role-Based Access
+1. Parent tries to access driver endpoint → 403
+2. Driver tries to access admin endpoint → 403
+3. Company admin tries to access other company → 403
+4. Platform admin can access all companies → 200
+
+---
+
+## NOTES FOR AI EXECUTION
+## ======================
+
+When user says "run tests":
+1. Read this file completely
+2. Check all prerequisites are met
+3. Run ALL test categories in sequence (not one by one)
+4. Collect ALL results (pass/fail/error)
+5. Generate comprehensive findings document
+6. Apply all fixes automatically where possible
+7. Re-run failed tests after fixes
+
+When user says "write test for X":
+1. Find relevant category in this file
+2. Use appropriate template
+3. Create test file in correct location
+4. Add test cases based on specifications
+
+When user says "stress test":
+1. Run all Category 3 and 4 tests
+2. Monitor metrics
+3. Report performance bottlenecks
+
+---
+
+## FINDINGS DOCUMENT FORMAT
+## ========================
+
+After running all tests, generate a "findings" document with this exact structure:
+
+```
+================================================================================
+                         ROSAGO TEST FINDINGS REPORT
+                         Generated: [DATE] [TIME]
+================================================================================
+
+## EXECUTIVE SUMMARY
+## =================
+Total Tests Run: [X]
+Passed: [X] ([X]%)
+Failed: [X] ([X]%)
+Skipped: [X]
+Execution Time: [X] minutes
+
+Overall Status: [PASS/FAIL/PARTIAL]
+
+---
+
+## CATEGORY 1: UNIT TESTS
+## ======================
+
+### Results Summary
+| Service | Tests | Passed | Failed | Coverage |
+|---------|-------|--------|--------|----------|
+| Auth    | X     | X      | X      | X%       |
+| Attend  | X     | X      | X      | X%       |
+| Payment | X     | X      | X      | X%       |
+| Trips   | X     | X      | X      | X%       |
+| GPS     | X     | X      | X      | X%       |
+
+### Failed Tests
+
+#### FAIL-U001: [Test Name]
+- File: [file path]
+- Error: [error message]
+- Stack: [relevant stack trace]
+- Root Cause: [analysis]
+- Fix Required:
+  ```typescript
+  // Code fix to apply
+  ```
+- Status: [PENDING_FIX / FIXED / CANNOT_FIX]
+
+#### FAIL-U002: [Next failed test...]
+[Same structure]
+
+---
+
+## CATEGORY 2: INTEGRATION TESTS (API)
+## ====================================
+
+### Results Summary
+| Endpoint | Method | Tests | Passed | Failed |
+|----------|--------|-------|--------|--------|
+| /auth/*  | ALL    | X     | X      | X      |
+| /attend/*| ALL    | X     | X      | X      |
+| /payment/*| ALL   | X     | X      | X      |
+
+### Failed Tests
+
+#### FAIL-I001: [Endpoint] [Method]
+- Expected: [expected response]
+- Actual: [actual response]
+- Status Code: [expected] vs [actual]
+- Root Cause: [analysis]
+- Fix Required:
+  ```typescript
+  // Code fix to apply
+  ```
+- Status: [PENDING_FIX / FIXED / CANNOT_FIX]
+
+---
+
+## CATEGORY 3: LOAD TESTS
+## ======================
+
+### Morning Rush Results
+| Metric | Target | Actual | Status |
+|--------|--------|--------|--------|
+| p95 Response Time | <500ms | Xms | PASS/FAIL |
+| Error Rate | <1% | X% | PASS/FAIL |
+| Max VUs Handled | 100 | X | PASS/FAIL |
+| Requests/sec | >50 | X | PASS/FAIL |
+
+### Payment Spike Results
+| Metric | Target | Actual | Status |
+|--------|--------|--------|--------|
+| p95 Response Time | <1000ms | Xms | PASS/FAIL |
+| Duplicate Payments | 0 | X | PASS/FAIL |
+| Queue Overflow | No | Yes/No | PASS/FAIL |
+
+### GPS Flood Results
+| Metric | Target | Actual | Status |
+|--------|--------|--------|--------|
+| Redis Write Latency | <10ms | Xms | PASS/FAIL |
+| WebSocket Broadcast | <100ms | Xms | PASS/FAIL |
+| Dropped Connections | 0 | X | PASS/FAIL |
+
+### Performance Issues Found
+
+#### PERF-001: [Issue Title]
+- Observed: [what happened]
+- Impact: [HIGH/MEDIUM/LOW]
+- Bottleneck: [database/redis/network/code]
+- Fix Required:
+  ```typescript
+  // Optimization code
+  ```
+- Status: [PENDING_FIX / FIXED]
+
+---
+
+## CATEGORY 4: WEBSOCKET STRESS TESTS
+## ===================================
+
+### Connection Stress Results
+| Metric | Target | Actual | Status |
+|--------|--------|--------|--------|
+| Max Concurrent Connections | 200 | X | PASS/FAIL |
+| Connection Success Rate | 100% | X% | PASS/FAIL |
+| Message Delivery Rate | 100% | X% | PASS/FAIL |
+| Avg Latency | <100ms | Xms | PASS/FAIL |
+
+### WebSocket Issues Found
+
+#### WS-001: [Issue Title]
+- Observed: [what happened]
+- Root Cause: [analysis]
+- Fix Required:
+  ```typescript
+  // Code fix
+  ```
+- Status: [PENDING_FIX / FIXED]
+
+---
+
+## CATEGORY 5: E2E TESTS (TestSprite)
+## ===================================
+
+### Company Admin Flows
+| Flow | Status | Issues |
+|------|--------|--------|
+| Login | PASS/FAIL | [issue if any] |
+| View Drivers | PASS/FAIL | [issue if any] |
+| Payment Plans | PASS/FAIL | [issue if any] |
+| Live Tracking | PASS/FAIL | [issue if any] |
+
+### Platform Admin Flows
+| Flow | Status | Issues |
+|------|--------|--------|
+| Login | PASS/FAIL | [issue if any] |
+| View Companies | PASS/FAIL | [issue if any] |
+| Analytics | PASS/FAIL | [issue if any] |
+
+### E2E Issues Found
+
+#### E2E-001: [Issue Title]
+- Screen: [screen name]
+- Steps to Reproduce: [steps]
+- Expected: [expected behavior]
+- Actual: [actual behavior]
+- Fix Required:
+  ```typescript
+  // Code fix
+  ```
+- Status: [PENDING_FIX / FIXED]
+
+---
+
+## ALL FIXES TO APPLY
+## ==================
+
+This section consolidates ALL fixes in order of application.
+Copy this entire section and paste back for automated fix application.
+
+### FIX 1: [FAIL-U001] [Description]
+File: [file path]
+Action: [CREATE/MODIFY/DELETE]
+```typescript
+// Complete code change
+```
+
+### FIX 2: [FAIL-I003] [Description]
+File: [file path]
+Action: [CREATE/MODIFY/DELETE]
+```typescript
+// Complete code change
+```
+
+[Continue for all fixes...]
+
+---
+
+## RECOMMENDATIONS
+## ===============
+
+### Critical (Must Fix Before Production)
+1. [Recommendation]
+2. [Recommendation]
+
+### High Priority (Fix Soon)
+1. [Recommendation]
+2. [Recommendation]
+
+### Medium Priority (Nice to Have)
+1. [Recommendation]
+2. [Recommendation]
+
+### Performance Optimizations
+1. [Recommendation]
+2. [Recommendation]
+
+---
+
+## RE-TEST AFTER FIXES
+## ===================
+
+After applying all fixes, re-run:
+1. Failed unit tests: npm test -- --testNamePattern="[failed test names]"
+2. Failed integration tests: npm run test:e2e -- --testNamePattern="[failed test names]"
+3. Load tests that failed thresholds
+4. WebSocket tests with issues
+
+Expected outcome after fixes: ALL PASS
+
+================================================================================
+                              END OF FINDINGS REPORT
+================================================================================
+```
+
+---
+
+## AUTOMATED TEST EXECUTION SEQUENCE
+## ==================================
+
+When user says "run tests", execute this EXACT sequence:
+
+### Step 1: Pre-flight Checks
+```bash
+# Check PostgreSQL
+psql -h localhost -U postgres -c "SELECT 1" 2>/dev/null && echo "PostgreSQL: OK" || echo "PostgreSQL: FAILED"
+
+# Check Redis
+redis-cli ping 2>/dev/null && echo "Redis: OK" || echo "Redis: FAILED"
+
+# Check Backend
+curl -s http://localhost:3000/health && echo "Backend: OK" || echo "Backend: FAILED"
+```
+
+### Step 2: Install Test Dependencies (if needed)
+```bash
+cd backend
+npm install --save-dev @nestjs/testing supertest @types/supertest 2>/dev/null
+```
+
+### Step 3: Run All Unit Tests
+```bash
+cd backend
+npm test -- --coverage --json --outputFile=test-results/unit.json 2>&1 | tee test-results/unit.log
+```
+
+### Step 4: Run All Integration Tests
+```bash
+cd backend
+npm run test:e2e -- --json --outputFile=test-results/e2e.json 2>&1 | tee test-results/e2e.log
+```
+
+### Step 5: Run Load Tests
+```bash
+cd backend
+k6 run --out json=test-results/load-morning.json test/load/morning-rush.js 2>&1 | tee test-results/load.log
+k6 run --out json=test-results/load-payment.json test/load/payment-spike.js 2>&1 | tee -a test-results/load.log
+k6 run --out json=test-results/load-gps.json test/load/gps-flood.js 2>&1 | tee -a test-results/load.log
+```
+
+### Step 6: Run WebSocket Tests
+```bash
+cd backend
+artillery run --output test-results/ws-gps.json test/websocket/gps-stress.yml 2>&1 | tee test-results/ws.log
+artillery run --output test-results/ws-notif.json test/websocket/notification-storm.yml 2>&1 | tee -a test-results/ws.log
+```
+
+### Step 7: Aggregate Results & Generate Findings
+```bash
+# AI reads all result files and generates findings document
+```
+
+### Step 8: Apply Fixes
+```bash
+# AI applies all code fixes from findings document
+```
+
+### Step 9: Re-run Failed Tests
+```bash
+# AI re-runs only previously failed tests
+```
+
+### Step 10: Final Report
+```bash
+# AI generates final summary with before/after comparison
+```

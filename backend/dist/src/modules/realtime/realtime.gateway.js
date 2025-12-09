@@ -150,6 +150,16 @@ let RealtimeGateway = class RealtimeGateway {
         console.log(`[Socket] Client ${client.id} joined company room: ${data.companyId}`);
         return { success: true };
     }
+    async handleSubscribeTripTracking(client, data) {
+        client.join(`trip:${data.tripId}`);
+        console.log(`[Socket] Client ${client.id} subscribed to trip: ${data.tripId}`);
+        return { success: true };
+    }
+    async handleUnsubscribeTripTracking(client, data) {
+        client.leave(`trip:${data.tripId}`);
+        console.log(`[Socket] Client ${client.id} unsubscribed from trip: ${data.tripId}`);
+        return { success: true };
+    }
     async emitLocationUpdate(busId, locationData) {
         await this.redis.publish('bus_location_updates', JSON.stringify({
             busId,
@@ -198,6 +208,22 @@ __decorate([
     __metadata("design:paramtypes", [socket_io_1.Socket, Object]),
     __metadata("design:returntype", Promise)
 ], RealtimeGateway.prototype, "handleJoinCompanyRoom", null);
+__decorate([
+    (0, websockets_1.SubscribeMessage)('subscribe_trip_tracking'),
+    __param(0, (0, websockets_1.ConnectedSocket)()),
+    __param(1, (0, websockets_1.MessageBody)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [socket_io_1.Socket, Object]),
+    __metadata("design:returntype", Promise)
+], RealtimeGateway.prototype, "handleSubscribeTripTracking", null);
+__decorate([
+    (0, websockets_1.SubscribeMessage)('unsubscribe_trip_tracking'),
+    __param(0, (0, websockets_1.ConnectedSocket)()),
+    __param(1, (0, websockets_1.MessageBody)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [socket_io_1.Socket, Object]),
+    __metadata("design:returntype", Promise)
+], RealtimeGateway.prototype, "handleUnsubscribeTripTracking", null);
 exports.RealtimeGateway = RealtimeGateway = __decorate([
     (0, websockets_1.WebSocketGateway)({
         cors: {

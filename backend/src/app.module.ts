@@ -22,6 +22,7 @@ import { RealtimeModule } from './modules/realtime/realtime.module';
 import { TripExceptionsModule } from './modules/trip-exceptions/trip-exceptions.module';
 import { EarlyPickupModule } from './modules/early-pickup/early-pickup.module';
 import { ScheduledRoutesModule } from './modules/scheduled-routes/scheduled-routes.module';
+import { HealthModule } from './modules/health/health.module';
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { ScheduledRoutesModule } from './modules/scheduled-routes/scheduled-rout
     TripExceptionsModule,
     EarlyPickupModule,
     ScheduledRoutesModule,
+    HealthModule,
   ],
   controllers: [],
   providers: [],
