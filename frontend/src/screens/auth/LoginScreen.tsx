@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TextInput, Alert } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TextInput, Alert, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
 import { LargeCTAButton } from "../../components/ui/LargeCTAButton";
@@ -18,6 +18,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 type RootStackParamList = {
   Login: undefined;
   ParentSignUp: undefined;
+  ForgotPassword: undefined;
   ParentApp: undefined;
   DriverApp: undefined;
 };
@@ -140,6 +141,14 @@ export default function LoginScreen({ navigation }: Props) {
                   disabled={isLoading}
                   style={styles.loginButton}
                 />
+
+                {/* Forgot Password Link */}
+                <TouchableOpacity 
+                  onPress={() => navigation.navigate("ForgotPassword" as any)}
+                  style={styles.forgotPasswordContainer}
+                >
+                  <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+                </TouchableOpacity>
               </View>
             </LiquidGlassCard>
           </Animated.View>
@@ -248,6 +257,15 @@ const styles = StyleSheet.create({
   },
   loginButton: {
     marginTop: 8,
+  },
+  forgotPasswordContainer: {
+    alignItems: "center",
+    marginTop: 4,
+  },
+  forgotPasswordText: {
+    color: colors.primary.blue,
+    fontSize: 14,
+    fontWeight: "500",
   },
   signupSection: {
     marginBottom: 20,

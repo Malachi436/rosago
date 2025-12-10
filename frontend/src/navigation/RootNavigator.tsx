@@ -14,6 +14,8 @@ import { colors } from "../theme";
 // Import screens
 import LoginScreen from "../screens/auth/LoginScreen";
 import ParentSignUpScreen from "../screens/auth/ParentSignUpScreen";
+import ForgotPasswordScreen from "../screens/auth/ForgotPasswordScreen";
+import ResetPasswordScreen from "../screens/auth/ResetPasswordScreen";
 import ParentNavigator from "./ParentNavigator";
 import DriverNavigator from "./DriverNavigator";
 import AdminNavigator from "./AdminNavigator";
@@ -21,6 +23,8 @@ import AdminNavigator from "./AdminNavigator";
 export type RootStackParamList = {
   Login: undefined;
   ParentSignUp: undefined;
+  ForgotPassword: undefined;
+  ResetPassword: { token?: string };
   ParentApp: undefined;
   DriverApp: undefined;
   AdminApp: undefined;
@@ -69,6 +73,8 @@ export default function RootNavigator() {
           {console.log('[RootNavigator] Rendering Login screens - isAuthenticated is false')}
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="ParentSignUp" component={ParentSignUpScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+          <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
         </>
       ) : (
         <>
