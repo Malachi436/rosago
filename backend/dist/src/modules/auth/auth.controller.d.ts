@@ -26,7 +26,6 @@ export declare class AuthController {
         access_token: string;
     }>;
     forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<{
-        resetToken: string;
         message: string;
     }>;
     resetPassword(resetPasswordDto: ResetPasswordDto): Promise<{

@@ -266,12 +266,25 @@ Admin runs on: http://localhost:3001
 - Used for: Parent subscription payments
 - Supports: MTN MoMo, Vodafone Cash, AirtelTigo Money
 
-### 5.3 Redis
+### 5.3 Brevo (Email Service)
+- Sign up: https://brevo.com/
+- Get API key from: SMTP & API → API keys
+- Free tier: 300 emails/day
+- Used for: Password reset emails, welcome emails, notifications
+- Environment variables needed:
+  ```env
+  BREVO_API_KEY=your-brevo-api-key
+  BREVO_SENDER_EMAIL=noreply@yourcompany.com
+  BREVO_SENDER_NAME=Your Company Name
+  FRONTEND_URL=http://localhost:3001
+  ```
+
+### 5.4 Redis
 - Local: Install Redis (Windows/Mac/Linux)
 - Cloud: Redis Cloud, Upstash, or AWS ElastiCache
 - Used for: Real-time GPS caching, session management
 
-### 5.4 PostgreSQL
+### 5.5 PostgreSQL
 - Local: Install PostgreSQL 15+
 - Cloud: Render PostgreSQL, Supabase, or AWS RDS
 - Used for: All persistent data
@@ -332,10 +345,12 @@ Parent: parent@test.com / Test@1234
 - [x] Live dashboard with map
 - [x] Home pickup location feature
 - [x] Call driver feature (parent app)
+- [x] Forgot password (Brevo email integration)
+- [x] Password reset with token validation
+- [x] Welcome email on signup
 
 ### In Progress / Planned:
 - [ ] Hubtle payment integration
-- [ ] Forgot password flow
 - [ ] Push notifications (Expo)
 - [ ] Analytics dashboard
 - [ ] Export reports (PDF/CSV)
@@ -351,8 +366,8 @@ Parent: parent@test.com / Test@1234
 POST /auth/login          - Login
 POST /auth/signup         - Parent signup
 POST /auth/refresh        - Refresh token
-POST /auth/forgot-password - Request reset (TODO)
-POST /auth/reset-password  - Reset password (TODO)
+POST /auth/forgot-password - Request password reset (sends email via Brevo)
+POST /auth/reset-password  - Reset password with token
 ```
 
 ### Admin

@@ -47,11 +47,13 @@ const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
 const bcrypt = __importStar(require("bcrypt"));
 const users_service_1 = require("../users/users.service");
+const email_service_1 = require("../email/email.service");
 const client_1 = require("@prisma/client");
 let AuthService = class AuthService {
-    constructor(usersService, jwtService) {
+    constructor(usersService, jwtService, emailService) {
         this.usersService = usersService;
         this.jwtService = jwtService;
+        this.emailService = emailService;
         this.saltRounds = 10;
     }
     async validateUser(email, password) {
@@ -161,15 +163,20 @@ let AuthService = class AuthService {
     async requestPasswordReset(email) {
         const user = await this.usersService.findByEmail(email);
         if (!user) {
-            throw new common_1.BadRequestException('If email exists, password reset link will be sent');
+            return {
+                message: 'If an account with that email exists, a password reset link has been sent.',
+            };
         }
         const resetToken = this.jwtService.sign({ sub: user.id, email: user.email, type: 'password-reset' }, {
             secret: process.env.JWT_REFRESH_SECRET,
             expiresIn: '1h',
         });
+        const emailSent = await this.emailService.sendPasswordResetEmail(user.email, resetToken, user.firstName);
+        if (!emailSent) {
+            console.warn(`[AuthService] Failed to send password reset email to ${email}`);
+        }
         return {
-            resetToken,
-            message: 'Password reset instructions sent to your email',
+            message: 'If an account with that email exists, a password reset link has been sent.',
         };
     }
     async resetPassword(resetToken, newPassword) {
@@ -200,6 +207,7 @@ exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [users_service_1.UsersService,
-        jwt_1.JwtService])
+        jwt_1.JwtService,
+        email_service_1.EmailService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

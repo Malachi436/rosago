@@ -23,6 +23,7 @@ import { TripExceptionsModule } from './modules/trip-exceptions/trip-exceptions.
 import { EarlyPickupModule } from './modules/early-pickup/early-pickup.module';
 import { ScheduledRoutesModule } from './modules/scheduled-routes/scheduled-routes.module';
 import { HealthModule } from './modules/health/health.module';
+import { EmailModule } from './modules/email/email.module';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { HealthModule } from './modules/health/health.module';
     EarlyPickupModule,
     ScheduledRoutesModule,
     HealthModule,
+    EmailModule,
   ],
   controllers: [],
   providers: [],

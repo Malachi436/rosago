@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException, BadRequestException, ConflictExcepti
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
+import { EmailService } from '../email/email.service';
 import { User, Role } from '@prisma/client';
 
 @Injectable()
@@ -11,6 +12,7 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+    private emailService: EmailService,
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
@@ -141,11 +143,14 @@ export class AuthService {
     }
   }
 
-  async requestPasswordReset(email: string): Promise<{ resetToken: string; message: string }> {
+  async requestPasswordReset(email: string): Promise<{ message: string }> {
     const user = await this.usersService.findByEmail(email);
     if (!user) {
       // Don't reveal if email exists (security best practice)
-      throw new BadRequestException('If email exists, password reset link will be sent');
+      // But still return success message
+      return {
+        message: 'If an account with that email exists, a password reset link has been sent.',
+      };
     }
 
     const resetToken = this.jwtService.sign(
@@ -156,9 +161,19 @@ export class AuthService {
       }
     );
 
-    return {
+    // Send email via Brevo
+    const emailSent = await this.emailService.sendPasswordResetEmail(
+      user.email,
       resetToken,
-      message: 'Password reset instructions sent to your email',
+      user.firstName,
+    );
+
+    if (!emailSent) {
+      console.warn(`[AuthService] Failed to send password reset email to ${email}`);
+    }
+
+    return {
+      message: 'If an account with that email exists, a password reset link has been sent.',
     };
   }
 

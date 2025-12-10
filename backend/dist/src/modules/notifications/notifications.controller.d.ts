@@ -14,8 +14,8 @@ export declare class NotificationsController {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        type: import(".prisma/client").$Enums.NotificationType;
         message: string;
+        type: import(".prisma/client").$Enums.NotificationType;
         title: string;
         isRead: boolean;
         sentAt: Date;
@@ -26,8 +26,8 @@ export declare class NotificationsController {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        type: import(".prisma/client").$Enums.NotificationType;
         message: string;
+        type: import(".prisma/client").$Enums.NotificationType;
         title: string;
         isRead: boolean;
         sentAt: Date;
@@ -39,8 +39,8 @@ export declare class NotificationsController {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        type: import(".prisma/client").$Enums.NotificationType;
         message: string;
+        type: import(".prisma/client").$Enums.NotificationType;
         title: string;
         isRead: boolean;
         sentAt: Date;

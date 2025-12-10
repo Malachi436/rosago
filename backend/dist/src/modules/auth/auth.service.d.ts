@@ -1,11 +1,13 @@
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
+import { EmailService } from '../email/email.service';
 import { User } from '@prisma/client';
 export declare class AuthService {
     private usersService;
     private jwtService;
+    private emailService;
     private readonly saltRounds;
-    constructor(usersService: UsersService, jwtService: JwtService);
+    constructor(usersService: UsersService, jwtService: JwtService, emailService: EmailService);
     validateUser(email: string, password: string): Promise<any>;
     signup(email: string, password: string, firstName: string, lastName: string, phone?: string): Promise<any>;
     login(user: User): Promise<{
@@ -31,7 +33,6 @@ export declare class AuthService {
         access_token: string;
     }>;
     requestPasswordReset(email: string): Promise<{
-        resetToken: string;
         message: string;
     }>;
     resetPassword(resetToken: string, newPassword: string): Promise<{

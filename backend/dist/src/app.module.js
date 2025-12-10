@@ -65,6 +65,7 @@ const trip_exceptions_module_1 = require("./modules/trip-exceptions/trip-excepti
 const early_pickup_module_1 = require("./modules/early-pickup/early-pickup.module");
 const scheduled_routes_module_1 = require("./modules/scheduled-routes/scheduled-routes.module");
 const health_module_1 = require("./modules/health/health.module");
+const email_module_1 = require("./modules/email/email.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -102,6 +103,7 @@ exports.AppModule = AppModule = __decorate([
             early_pickup_module_1.EarlyPickupModule,
             scheduled_routes_module_1.ScheduledRoutesModule,
             health_module_1.HealthModule,
+            email_module_1.EmailModule,
         ],
         controllers: [],
         providers: [],
