@@ -31,6 +31,7 @@ export function Sidebar() {
         { label: 'Buses', href: `/company/${companyId}/buses` },
         { label: 'Drivers', href: `/company/${companyId}/drivers` },
         { label: 'Analytics', href: `/company/${companyId}/analytics` },
+        { label: 'Reports', href: `/company/${companyId}/reports` },
       ];
 
   return (

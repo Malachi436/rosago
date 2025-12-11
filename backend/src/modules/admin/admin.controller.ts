@@ -121,4 +121,22 @@ export class AdminController {
   async getCompanyActiveTrips(@Param('companyId') companyId: string) {
     return this.adminService.getCompanyActiveTrips(companyId);
   }
+
+  @Get('company/:companyId/reports/attendance')
+  @Roles('PLATFORM_ADMIN', 'COMPANY_ADMIN')
+  async getAttendanceReport(@Param('companyId') companyId: string) {
+    return this.adminService.getAttendanceReport(companyId);
+  }
+
+  @Get('company/:companyId/reports/payments')
+  @Roles('PLATFORM_ADMIN', 'COMPANY_ADMIN')
+  async getPaymentReport(@Param('companyId') companyId: string) {
+    return this.adminService.getPaymentReport(companyId);
+  }
+
+  @Get('company/:companyId/reports/driver-performance')
+  @Roles('PLATFORM_ADMIN', 'COMPANY_ADMIN')
+  async getDriverPerformanceReport(@Param('companyId') companyId: string) {
+    return this.adminService.getDriverPerformanceReport(companyId);
+  }
 }

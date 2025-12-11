@@ -485,6 +485,161 @@ let AdminService = class AdminService {
             },
         });
     }
+    async getAttendanceReport(companyId) {
+        const attendances = await this.prisma.childAttendance.findMany({
+            where: {
+                trip: { bus: { driver: { user: { companyId } } } },
+            },
+            include: {
+                child: {
+                    select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true,
+                        parent: {
+                            select: {
+                                firstName: true,
+                                lastName: true,
+                                email: true,
+                                phone: true,
+                            },
+                        },
+                        school: {
+                            select: {
+                                name: true,
+                            },
+                        },
+                    },
+                },
+                trip: {
+                    select: {
+                        id: true,
+                        startTime: true,
+                        endTime: true,
+                        status: true,
+                        bus: {
+                            select: {
+                                plateNumber: true,
+                            },
+                        },
+                        route: {
+                            select: {
+                                name: true,
+                            },
+                        },
+                    },
+                },
+            },
+            orderBy: {
+                timestamp: 'desc',
+            },
+            take: 1000,
+        });
+        return attendances.map((att) => ({
+            date: att.timestamp,
+            childName: `${att.child.firstName} ${att.child.lastName}`,
+            parentName: `${att.child.parent.firstName} ${att.child.parent.lastName}`,
+            parentEmail: att.child.parent.email,
+            parentPhone: att.child.parent.phone,
+            schoolName: att.child.school.name,
+            tripRoute: att.trip.route.name,
+            busPlate: att.trip.bus.plateNumber,
+            status: att.status,
+            tripStatus: att.trip.status,
+            recordedBy: att.recordedBy,
+        }));
+    }
+    async getPaymentReport(companyId) {
+        const payments = await this.prisma.paymentIntent.findMany({
+            where: {
+                parent: { companyId },
+            },
+            include: {
+                parent: {
+                    select: {
+                        firstName: true,
+                        lastName: true,
+                        email: true,
+                        phone: true,
+                    },
+                },
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+            take: 1000,
+        });
+        return payments.map((payment) => ({
+            date: payment.createdAt,
+            parentName: `${payment.parent.firstName} ${payment.parent.lastName}`,
+            parentEmail: payment.parent.email,
+            parentPhone: payment.parent.phone,
+            amount: payment.amount,
+            currency: payment.currency,
+            status: payment.status,
+            hubtleRef: payment.hubtleRef || 'N/A',
+            paymentId: payment.id,
+        }));
+    }
+    async getDriverPerformanceReport(companyId) {
+        const drivers = await this.prisma.driver.findMany({
+            where: {
+                user: { companyId },
+            },
+            include: {
+                user: {
+                    select: {
+                        firstName: true,
+                        lastName: true,
+                        email: true,
+                        phone: true,
+                    },
+                },
+                trips: {
+                    select: {
+                        id: true,
+                        status: true,
+                        startTime: true,
+                        endTime: true,
+                        createdAt: true,
+                    },
+                },
+                buses: {
+                    select: {
+                        plateNumber: true,
+                    },
+                },
+            },
+        });
+        return drivers.map((driver) => {
+            const totalTrips = driver.trips.length;
+            const completedTrips = driver.trips.filter((t) => t.status === 'COMPLETED').length;
+            const inProgressTrips = driver.trips.filter((t) => t.status === 'IN_PROGRESS').length;
+            const completionRate = totalTrips > 0 ? (completedTrips / totalTrips) * 100 : 0;
+            const onTimeTrips = driver.trips.filter((trip) => {
+                if (trip.status === 'COMPLETED' && trip.startTime && trip.endTime) {
+                    const duration = new Date(trip.endTime).getTime() - new Date(trip.startTime).getTime();
+                    const hours = duration / (1000 * 60 * 60);
+                    return hours <= 2;
+                }
+                return false;
+            }).length;
+            const onTimeRate = completedTrips > 0 ? (onTimeTrips / completedTrips) * 100 : 0;
+            return {
+                driverName: `${driver.user.firstName} ${driver.user.lastName}`,
+                email: driver.user.email,
+                phone: driver.user.phone,
+                license: driver.license,
+                buses: driver.buses.map((b) => b.plateNumber).join(', '),
+                totalTrips,
+                completedTrips,
+                inProgressTrips,
+                completionRate: completionRate.toFixed(2),
+                onTimeTrips,
+                onTimeRate: onTimeRate.toFixed(2),
+            };
+        });
+    }
 };
 exports.AdminService = AdminService;
 exports.AdminService = AdminService = __decorate([

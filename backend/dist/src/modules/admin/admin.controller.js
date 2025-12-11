@@ -77,6 +77,15 @@ let AdminController = class AdminController {
     async getCompanyActiveTrips(companyId) {
         return this.adminService.getCompanyActiveTrips(companyId);
     }
+    async getAttendanceReport(companyId) {
+        return this.adminService.getAttendanceReport(companyId);
+    }
+    async getPaymentReport(companyId) {
+        return this.adminService.getPaymentReport(companyId);
+    }
+    async getDriverPerformanceReport(companyId) {
+        return this.adminService.getDriverPerformanceReport(companyId);
+    }
 };
 exports.AdminController = AdminController;
 __decorate([
@@ -224,6 +233,30 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "getCompanyActiveTrips", null);
+__decorate([
+    (0, common_1.Get)('company/:companyId/reports/attendance'),
+    (0, roles_decorator_1.Roles)('PLATFORM_ADMIN', 'COMPANY_ADMIN'),
+    __param(0, (0, common_1.Param)('companyId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getAttendanceReport", null);
+__decorate([
+    (0, common_1.Get)('company/:companyId/reports/payments'),
+    (0, roles_decorator_1.Roles)('PLATFORM_ADMIN', 'COMPANY_ADMIN'),
+    __param(0, (0, common_1.Param)('companyId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getPaymentReport", null);
+__decorate([
+    (0, common_1.Get)('company/:companyId/reports/driver-performance'),
+    (0, roles_decorator_1.Roles)('PLATFORM_ADMIN', 'COMPANY_ADMIN'),
+    __param(0, (0, common_1.Param)('companyId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getDriverPerformanceReport", null);
 exports.AdminController = AdminController = __decorate([
     (0, common_1.Controller)('admin'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
