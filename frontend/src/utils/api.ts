@@ -1,11 +1,11 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 import { socketService } from './socket';
 
-// API configuration
-// Development environment: http://192.168.100.13:8081
-// Backend API: http://192.168.100.13:3000
-const API_BASE_URL = __DEV__ ? 'http://192.168.100.13:3000' : 'http://192.168.100.13:3000';
+// API configuration - Backend runs on port 3000
+// Using 192.168.100.2 for all platforms
+const API_BASE_URL = 'http://192.168.100.2:3000';
 
 interface ApiRequestConfig {
   headers?: Record<string, string>;
@@ -24,10 +24,10 @@ class ApiClient {
   private onAuthFailure: (() => void) | null = null;
 
   constructor() {
-    console.log('[API Client] Initializing with base URL:', API_BASE_URL);
+    console.log('[API Client] Initializing with base URL:', API_BASE_URL, 'Platform:', Platform.OS);
     this.axiosInstance = axios.create({
       baseURL: API_BASE_URL,
-      timeout: 10000,
+      timeout: 20000, // Increased to 20s for unreliable networks
       headers: {
         'Content-Type': 'application/json',
       },

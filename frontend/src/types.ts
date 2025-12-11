@@ -32,13 +32,16 @@ export interface Child {
   lastName: string;
   dateOfBirth?: string;
   schoolId: string;
-  school?: { id: string; name: string };
+  school?: { id: string; name: string; latitude?: number; longitude?: number };
   parentId: string;
   status?: ChildStatus;
   pickupType: PickupType;
   pickupLatitude?: number;
   pickupLongitude?: number;
   pickupDescription?: string;
+  homeLatitude?: number;
+  homeLongitude?: number;
+  homeAddress?: string;
   image?: string;
 }
 

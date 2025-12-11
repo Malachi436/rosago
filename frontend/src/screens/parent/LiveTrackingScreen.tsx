@@ -70,10 +70,14 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * c;
 }
 
-// Calculate ETA based on distance and average speed (default 30 km/h in city)
+// Calculate ETA based on distance and average speed
+// Speed is clamped to realistic urban traffic bounds (15-50 km/h)
 function calculateETA(distanceKm: number, speedKmh: number = 30): string {
+  // Clamp speed to realistic urban bounds to prevent GPS errors
+  const clampedSpeed = Math.max(15, Math.min(50, speedKmh || 30));
+  
   if (distanceKm < 0.1) return "Arriving";
-  const timeMinutes = Math.round((distanceKm / speedKmh) * 60);
+  const timeMinutes = Math.round((distanceKm / clampedSpeed) * 60);
   if (timeMinutes < 1) return "< 1 min";
   if (timeMinutes === 1) return "1 min";
   return `${timeMinutes} mins`;
@@ -100,11 +104,23 @@ export default function LiveTrackingScreen() {
   // Get pickup location for selected child - ALWAYS use stored home location, never device location
   // This ensures ETA is calculated to the child's home, not where the device currently is
   const getStoredHomeLocation = useCallback((child: Child | undefined): { latitude: number; longitude: number } | null => {
-    if (!child) return null;
+    if (!child) {
+      console.log('[LiveTracking] getStoredHomeLocation: No child provided');
+      return null;
+    }
+    
+    console.log('[LiveTracking] Platform:', Platform.OS);
+    console.log('[LiveTracking] getStoredHomeLocation for child:', child.id, child.firstName);
+    console.log('[LiveTracking] Child coordinates:', JSON.stringify({
+      pickupLatitude: child.pickupLatitude,
+      pickupLongitude: child.pickupLongitude,
+      homeLatitude: child.homeLatitude,
+      homeLongitude: child.homeLongitude,
+    }));
     
     // First priority: stored pickup coordinates
     if (child.pickupLatitude && child.pickupLongitude) {
-      console.log('[LiveTracking] Using stored pickup location:', child.pickupLatitude, child.pickupLongitude);
+      console.log('[LiveTracking] USING stored pickup location:', child.pickupLatitude, child.pickupLongitude);
       return {
         latitude: child.pickupLatitude,
         longitude: child.pickupLongitude,
@@ -113,7 +129,7 @@ export default function LiveTrackingScreen() {
     
     // Second priority: stored home coordinates
     if (child.homeLatitude && child.homeLongitude) {
-      console.log('[LiveTracking] Using stored home location:', child.homeLatitude, child.homeLongitude);
+      console.log('[LiveTracking] USING stored home location:', child.homeLatitude, child.homeLongitude);
       return {
         latitude: child.homeLatitude,
         longitude: child.homeLongitude,
@@ -121,7 +137,7 @@ export default function LiveTrackingScreen() {
     }
     
     // No stored location - return null (don't fallback to device location)
-    console.log('[LiveTracking] No stored home location for child:', child.id);
+    console.log('[LiveTracking] WARNING: No stored home/pickup location for child:', child.id, '- Will show "Set Home"');
     return null;
   }, []);
 
@@ -135,10 +151,18 @@ export default function LiveTrackingScreen() {
     : null;
   
   // Show "Set Home" instead of ETA if no home location is stored
+  const rawSpeed = busLocation?.speed || 30;
+  console.log('[LiveTracking] ETA Calculation:', {
+    selectedChild: selectedChild?.firstName,
+    distance: distance?.toFixed(2) + ' km',
+    rawSpeed: rawSpeed + ' km/h',
+    pickupLocation: pickupLocation ? `${pickupLocation.latitude.toFixed(4)}, ${pickupLocation.longitude.toFixed(4)}` : 'none',
+  });
+  
   const eta = !hasStoredLocation
     ? "Set Home"
     : distance !== null 
-      ? calculateETA(distance, busLocation?.speed || 30) 
+      ? calculateETA(distance, rawSpeed) 
       : "--";
 
   const distanceText = !hasStoredLocation
@@ -186,7 +210,15 @@ export default function LiveTrackingScreen() {
       const childrenResponse = await apiClient.get<Child[]>(`/children/parent/${user.id}`);
       const childrenList = Array.isArray(childrenResponse) ? childrenResponse : [];
       setChildren(childrenList);
-      console.log('[LiveTracking] Fetched children:', childrenList.length);
+      console.log('[LiveTracking] Fetched children count:', childrenList.length);
+      console.log('[LiveTracking] Platform:', Platform.OS);
+      childrenList.forEach(c => {
+        console.log('[LiveTracking] Child:', c.firstName, c.lastName);
+        console.log('[LiveTracking] - pickupLatitude:', c.pickupLatitude);
+        console.log('[LiveTracking] - pickupLongitude:', c.pickupLongitude);
+        console.log('[LiveTracking] - homeLatitude:', c.homeLatitude);
+        console.log('[LiveTracking] - homeLongitude:', c.homeLongitude);
+      });
       
       if (childrenList.length > 0) {
         // Set first child as selected
