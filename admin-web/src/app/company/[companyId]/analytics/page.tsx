@@ -3,7 +3,7 @@
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { apiClient } from '@/lib/api-client';
 import { use, useEffect, useState } from 'react';
-import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface AnalyticsData {
   trips: {
@@ -217,7 +217,7 @@ export default function CompanyAnalyticsPage({
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {tripStatusData.map((entry, index) => (
+                  {tripStatusData.map((_entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>

@@ -49,7 +49,7 @@ export default function DriversPage({
     try {
       setLoading(true);
       const data = await apiClient.get(`/admin/company/${companyId}/drivers`);
-      setDrivers(data || []);
+      setDrivers(Array.isArray(data) ? data : []);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load drivers');
       console.error('Error loading drivers:', err);

@@ -48,7 +48,7 @@ export default function OnboardDriverPage({
   const fetchBuses = async () => {
     try {
       const data = await apiClient.get(`/buses/company/${companyId}`);
-      setBuses(data || []);
+      setBuses(Array.isArray(data) ? data : []);
     } catch (err: any) {
       console.error('Error loading buses:', err);
     }
@@ -89,7 +89,7 @@ export default function OnboardDriverPage({
         companyId,
       });
 
-      const driverId = driverResponse.id;
+      const driverId = (driverResponse as any).id;
 
       // Step 2: Create driver profile with license
       await apiClient.post('/drivers', {
@@ -103,7 +103,7 @@ export default function OnboardDriverPage({
 
         if (!bus) {
           // Create new bus if it doesn't exist
-          const busResponse = await apiClient.post('/buses', {
+          const busResponse: any = await apiClient.post('/buses', {
             plateNumber: formData.plateNumber,
             capacity: 50,
             driverId,

@@ -76,11 +76,11 @@ export default function ChildrenPage({
       setLoading(true);
       // Fetch schools
       const schoolsData = await apiClient.get(`/admin/company/${companyId}/schools`);
-      setSchools(schoolsData || []);
+      setSchools(Array.isArray(schoolsData) ? schoolsData : []);
 
       // Fetch children
       const childrenData = await apiClient.get(`/admin/company/${companyId}/children`);
-      setChildren(childrenData || []);
+      setChildren(Array.isArray(childrenData) ? childrenData : []);
 
       // Fetch payment status
       const paymentsData = await apiClient.get(`/admin/company/${companyId}/children/payments`);
