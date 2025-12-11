@@ -106,8 +106,8 @@ export class AdminController {
 
   @Get('company/:companyId/analytics')
   @Roles('PLATFORM_ADMIN', 'COMPANY_ADMIN')
-  async getCompanyAnalytics(@Param('companyId') companyId: string) {
-    return this.adminService.getCompanyAnalytics(companyId);
+  async getCompanyAnalytics(@Param('companyId') companyId: string, @Query('range') range?: string) {
+    return this.adminService.getCompanyAnalytics(companyId, range);
   }
 
   @Get('company/:companyId/trips')

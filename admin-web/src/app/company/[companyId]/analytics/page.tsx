@@ -33,6 +33,8 @@ interface AnalyticsData {
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
 
+type DateRange = 'daily' | 'weekly' | 'monthly';
+
 export default function CompanyAnalyticsPage({
   params,
 }: {
@@ -42,16 +44,19 @@ export default function CompanyAnalyticsPage({
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [dateRange, setDateRange] = useState<DateRange>('weekly');
 
   useEffect(() => {
     fetchAnalytics();
-  }, [companyId]);
+  }, [companyId, dateRange]);
 
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      const data = await apiClient.get(`/admin/company/${companyId}/analytics`);
-      setAnalytics(data);
+      const response = await apiClient.get(`/admin/company/${companyId}/analytics?range=${dateRange}`);
+      if (response && typeof response === 'object') {
+        setAnalytics(response as AnalyticsData);
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load analytics');
       console.error('Error loading analytics:', err);
@@ -102,6 +107,58 @@ export default function CompanyAnalyticsPage({
           <p className="text-slate-500 mt-1">View company performance metrics and insights</p>
         </div>
 
+        {/* Date Range Selector */}
+        <div className="bg-white border border-slate-200 rounded-lg p-6 mb-6">
+          <h3 className="font-bold text-slate-900 mb-4">Select Time Period</h3>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setDateRange('daily')}
+              className={`px-6 py-3 rounded-lg font-semibold transition ${
+                dateRange === 'daily'
+                  ? 'bg-blue-600 text-white shadow-lg'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              <div className="text-center">
+                <div className="text-lg">📅</div>
+                <div className="mt-1">Daily</div>
+                <div className="text-xs opacity-75">Last 24 hours</div>
+              </div>
+            </button>
+            <button
+              onClick={() => setDateRange('weekly')}
+              className={`px-6 py-3 rounded-lg font-semibold transition ${
+                dateRange === 'weekly'
+                  ? 'bg-blue-600 text-white shadow-lg'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              <div className="text-center">
+                <div className="text-lg">📆</div>
+                <div className="mt-1">Weekly</div>
+                <div className="text-xs opacity-75">Last 7 days</div>
+              </div>
+            </button>
+            <button
+              onClick={() => setDateRange('monthly')}
+              className={`px-6 py-3 rounded-lg font-semibold transition ${
+                dateRange === 'monthly'
+                  ? 'bg-blue-600 text-white shadow-lg'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              <div className="text-center">
+                <div className="text-lg">🗓️</div>
+                <div className="mt-1">Monthly</div>
+                <div className="text-xs opacity-75">Last 30 days</div>
+              </div>
+            </button>
+          </div>
+          <p className="text-sm text-slate-500 mt-3">
+            <strong>Showing:</strong> {dateRange === 'daily' ? 'Last 24 hours' : dateRange === 'weekly' ? 'Last 7 days' : 'Last 30 days (4 weeks)'} analytics
+          </p>
+        </div>
+
         {/* Key Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-lg border border-slate-200 p-6">
@@ -129,7 +186,7 @@ export default function CompanyAnalyticsPage({
             <p className="text-3xl font-bold text-orange-600 mt-2">
               {analytics.attendance.missedPickups}
             </p>
-            <p className="text-xs text-slate-500 mt-2">Last 30 days</p>
+            <p className="text-xs text-slate-500 mt-2">{dateRange === 'daily' ? 'Last 24h' : dateRange === 'weekly' ? 'Last 7 days' : 'Last 30 days'}</p>
           </div>
 
           <div className="bg-white rounded-lg border border-slate-200 p-6">

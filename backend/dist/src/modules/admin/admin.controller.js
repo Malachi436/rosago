@@ -68,8 +68,8 @@ let AdminController = class AdminController {
     async deleteSchool(schoolId) {
         return this.adminService.deleteSchool(schoolId);
     }
-    async getCompanyAnalytics(companyId) {
-        return this.adminService.getCompanyAnalytics(companyId);
+    async getCompanyAnalytics(companyId, range) {
+        return this.adminService.getCompanyAnalytics(companyId, range);
     }
     async getCompanyTrips(companyId) {
         return this.adminService.getCompanyTrips(companyId);
@@ -213,8 +213,9 @@ __decorate([
     (0, common_1.Get)('company/:companyId/analytics'),
     (0, roles_decorator_1.Roles)('PLATFORM_ADMIN', 'COMPANY_ADMIN'),
     __param(0, (0, common_1.Param)('companyId')),
+    __param(1, (0, common_1.Query)('range')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "getCompanyAnalytics", null);
 __decorate([

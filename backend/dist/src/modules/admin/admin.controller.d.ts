@@ -17,7 +17,7 @@ export declare class AdminController {
     deleteCompany(companyId: string): Promise<any>;
     updateSchool(schoolId: string, updateSchoolDto: any): Promise<any>;
     deleteSchool(schoolId: string): Promise<any>;
-    getCompanyAnalytics(companyId: string): Promise<any>;
+    getCompanyAnalytics(companyId: string, range?: string): Promise<any>;
     getCompanyTrips(companyId: string): Promise<any>;
     getCompanyActiveTrips(companyId: string): Promise<any>;
     getAttendanceReport(companyId: string, range?: string): Promise<any>;

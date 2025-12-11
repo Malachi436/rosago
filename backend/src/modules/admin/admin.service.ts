@@ -322,24 +322,43 @@ export class AdminService {
     });
   }
 
-  async getCompanyAnalytics(companyId: string): Promise<any> {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  async getCompanyAnalytics(companyId: string, range?: string): Promise<any> {
+    // Calculate date filter based on range
+    const now = new Date();
+    let startDate: Date;
+    
+    switch (range) {
+      case 'daily':
+        startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000); // Last 24 hours
+        break;
+      case 'weekly':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000); // Last 7 days
+        break;
+      case 'monthly':
+      default:
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // Last 30 days (4 weeks)
+        break;
+    }
 
     const [totalTrips, completedTrips, inProgressTrips, totalChildren, activeChildren, totalPayments, successfulPayments, missedPickups, onTimeTrips] = await Promise.all([
       this.prisma.trip.count({
-        where: { bus: { driver: { user: { companyId } } } },
+        where: { 
+          bus: { driver: { user: { companyId } } },
+          createdAt: { gte: startDate },
+        },
       }),
       this.prisma.trip.count({
         where: {
           bus: { driver: { user: { companyId } } },
           status: 'COMPLETED',
+          createdAt: { gte: startDate },
         },
       }),
       this.prisma.trip.count({
         where: {
           bus: { driver: { user: { companyId } } },
           status: 'IN_PROGRESS',
+          createdAt: { gte: startDate },
         },
       }),
       this.prisma.child.count({
@@ -360,26 +379,28 @@ export class AdminService {
       this.prisma.paymentIntent.count({
         where: {
           parent: { companyId },
+          createdAt: { gte: startDate },
         },
       }),
       this.prisma.paymentIntent.count({
         where: {
           parent: { companyId },
           status: 'succeeded',
+          createdAt: { gte: startDate },
         },
       }),
       this.prisma.childAttendance.count({
         where: {
           trip: { bus: { driver: { user: { companyId } } } },
           status: 'MISSED',
-          createdAt: { gte: thirtyDaysAgo },
+          createdAt: { gte: startDate },
         },
       }),
       this.prisma.trip.count({
         where: {
           bus: { driver: { user: { companyId } } },
           status: 'COMPLETED',
-          createdAt: { gte: thirtyDaysAgo },
+          createdAt: { gte: startDate },
         },
       }),
     ]);
