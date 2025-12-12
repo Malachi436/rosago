@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const realtime_gateway_1 = require("../realtime/realtime.gateway");
 const notifications_service_1 = require("../notifications/notifications.service");
+const client_1 = require("@prisma/client");
 let TripExceptionsService = class TripExceptionsService {
     constructor(prisma, realtimeGateway, notificationsService) {
         this.prisma = prisma;
@@ -166,7 +167,7 @@ let TripExceptionsService = class TripExceptionsService {
                 userId: trip.driver.userId,
                 title: '🚨 Emergency Pickup Request',
                 message: `${exception.child.firstName} ${exception.child.lastName} needs to be picked up urgently. Parent has un-skipped this trip. ${reason || ''}`,
-                type: 'UNSKIP_REQUEST',
+                type: client_1.NotificationType.UNSKIP_REQUEST,
                 requiresAck: true,
                 relatedEntityType: 'TRIP_EXCEPTION',
                 relatedEntityId: exception.id,

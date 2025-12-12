@@ -2,6 +2,7 @@ import { Injectable, Optional, NotFoundException, BadRequestException } from '@n
 import { PrismaService } from '../../prisma/prisma.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '@prisma/client';
 
 @Injectable()
 export class TripExceptionsService {
@@ -183,7 +184,7 @@ export class TripExceptionsService {
         userId: trip.driver.userId,
         title: '🚨 Emergency Pickup Request',
         message: `${exception.child.firstName} ${exception.child.lastName} needs to be picked up urgently. Parent has un-skipped this trip. ${reason || ''}`,
-        type: 'UNSKIP_REQUEST',
+        type: NotificationType.UNSKIP_REQUEST,
         requiresAck: true, // Driver must acknowledge
         relatedEntityType: 'TRIP_EXCEPTION',
         relatedEntityId: exception.id,

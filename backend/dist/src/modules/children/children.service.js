@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ChildrenService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../prisma/prisma.service");
+const client_1 = require("@prisma/client");
 const notifications_service_1 = require("../notifications/notifications.service");
 let ChildrenService = class ChildrenService {
     constructor(prisma, notificationsService) {
@@ -193,7 +194,7 @@ let ChildrenService = class ChildrenService {
                 userId: admin.id,
                 title: 'Location Change Request',
                 message: `${child.parent.firstName} ${child.parent.lastName} has requested a location change for ${child.firstName} ${child.lastName}`,
-                type: 'LOCATION_CHANGE_REQUEST',
+                type: client_1.NotificationType.LOCATION_CHANGE_REQUEST,
                 relatedEntityType: 'LOCATION_CHANGE_REQUEST',
                 relatedEntityId: request.id,
                 metadata: {

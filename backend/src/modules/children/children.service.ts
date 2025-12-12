@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { Child } from '@prisma/client';
+import { Child, NotificationType } from '@prisma/client';
 import { LinkChildDto, BulkUpdateGradesDto } from './dto/link-child.dto';
 import { RequestLocationChangeDto, ReviewLocationChangeDto } from './dto/location-change.dto';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -233,7 +233,7 @@ export class ChildrenService {
         userId: admin.id,
         title: 'Location Change Request',
         message: `${child.parent.firstName} ${child.parent.lastName} has requested a location change for ${child.firstName} ${child.lastName}`,
-        type: 'LOCATION_CHANGE_REQUEST',
+        type: NotificationType.LOCATION_CHANGE_REQUEST,
         relatedEntityType: 'LOCATION_CHANGE_REQUEST',
         relatedEntityId: request.id,
         metadata: {

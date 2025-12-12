@@ -16,32 +16,31 @@ export declare class ChildrenService {
     remove(id: string): Promise<Child>;
     generateUniqueCode(): Promise<string>;
     linkChildToParent(parentId: string, linkDto: LinkChildDto): Promise<{
-        school: {
-            id: string;
-            name: string;
-            address: string | null;
-            createdAt: Date;
-            updatedAt: Date;
-            latitude: number | null;
-            longitude: number | null;
-            companyId: string;
-        };
         parent: {
             id: string;
-            email: string;
             firstName: string;
             lastName: string;
+            email: string;
+        };
+        school: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            name: string;
+            companyId: string;
+            latitude: number | null;
+            longitude: number | null;
+            address: string | null;
         };
     } & {
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
+        uniqueCode: string | null;
         firstName: string;
         lastName: string;
-        schoolId: string;
-        uniqueCode: string;
         dateOfBirth: Date;
         grade: string | null;
+        parentId: string | null;
+        schoolId: string;
         pickupType: import(".prisma/client").$Enums.PickupType;
         pickupLatitude: number | null;
         pickupLongitude: number | null;
@@ -51,7 +50,8 @@ export declare class ChildrenService {
         homeAddress: string | null;
         colorCode: string;
         isLinked: boolean;
-        parentId: string | null;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
     bulkUpdateGrades(companyId: string, updateDto: BulkUpdateGradesDto, adminId: string): Promise<{
         message: string;
@@ -68,69 +68,68 @@ export declare class ChildrenService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        status: import(".prisma/client").$Enums.LocationChangeStatus;
-        childId: string;
         requestedBy: string;
-        reason: string | null;
         oldLatitude: number | null;
         oldLongitude: number | null;
         oldAddress: string | null;
         newLatitude: number;
         newLongitude: number;
         newAddress: string | null;
+        status: import(".prisma/client").$Enums.LocationChangeStatus;
+        reason: string | null;
         reviewedBy: string | null;
         reviewedAt: Date | null;
         reviewNotes: string | null;
         completedAt: Date | null;
+        childId: string;
     }>;
     reviewLocationChangeRequest(requestId: string, adminId: string, reviewDto: ReviewLocationChangeDto): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        status: import(".prisma/client").$Enums.LocationChangeStatus;
-        childId: string;
         requestedBy: string;
-        reason: string | null;
         oldLatitude: number | null;
         oldLongitude: number | null;
         oldAddress: string | null;
         newLatitude: number;
         newLongitude: number;
         newAddress: string | null;
+        status: import(".prisma/client").$Enums.LocationChangeStatus;
+        reason: string | null;
         reviewedBy: string | null;
         reviewedAt: Date | null;
         reviewNotes: string | null;
         completedAt: Date | null;
+        childId: string;
     }>;
     getPendingLocationChangeRequests(companyId: string): Promise<({
         child: {
-            school: {
-                id: string;
-                name: string;
-                address: string | null;
-                createdAt: Date;
-                updatedAt: Date;
-                latitude: number | null;
-                longitude: number | null;
-                companyId: string;
-            };
             parent: {
                 id: string;
-                email: string;
-                phone: string;
                 firstName: string;
                 lastName: string;
+                email: string;
+                phone: string;
+            };
+            school: {
+                id: string;
+                createdAt: Date;
+                updatedAt: Date;
+                name: string;
+                companyId: string;
+                latitude: number | null;
+                longitude: number | null;
+                address: string | null;
             };
         } & {
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
+            uniqueCode: string | null;
             firstName: string;
             lastName: string;
-            schoolId: string;
-            uniqueCode: string;
             dateOfBirth: Date;
             grade: string | null;
+            parentId: string | null;
+            schoolId: string;
             pickupType: import(".prisma/client").$Enums.PickupType;
             pickupLatitude: number | null;
             pickupLongitude: number | null;
@@ -140,25 +139,26 @@ export declare class ChildrenService {
             homeAddress: string | null;
             colorCode: string;
             isLinked: boolean;
-            parentId: string | null;
+            createdAt: Date;
+            updatedAt: Date;
         };
     } & {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        status: import(".prisma/client").$Enums.LocationChangeStatus;
-        childId: string;
         requestedBy: string;
-        reason: string | null;
         oldLatitude: number | null;
         oldLongitude: number | null;
         oldAddress: string | null;
         newLatitude: number;
         newLongitude: number;
         newAddress: string | null;
+        status: import(".prisma/client").$Enums.LocationChangeStatus;
+        reason: string | null;
         reviewedBy: string | null;
         reviewedAt: Date | null;
         reviewNotes: string | null;
         completedAt: Date | null;
+        childId: string;
     })[]>;
 }
