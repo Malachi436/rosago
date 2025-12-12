@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Switch, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Switch, Alert, TouchableOpacity, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '../stores/authStore';
@@ -47,7 +47,7 @@ export const DriverHomeScreen = () => {
       return;
     }
 
-    const SOCKET_URL = __DEV__ ? 'http://192.168.0.181:3000' : 'http://192.168.0.181:3000';
+    const SOCKET_URL = 'http://172.20.10.3:3000';
     const newSocket = io(SOCKET_URL, {
       auth: { token },
       transports: ['websocket', 'polling'],

@@ -4,8 +4,7 @@ import { Platform } from 'react-native';
 import { socketService } from './socket';
 
 // API configuration - Backend runs on port 3000
-// Using 192.168.100.2 for all platforms
-const API_BASE_URL = 'http://192.168.0.181:3000';
+const API_BASE_URL = 'http://172.20.10.3:3000';
 
 interface ApiRequestConfig {
   headers?: Record<string, string>;
