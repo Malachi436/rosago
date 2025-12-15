@@ -151,7 +151,7 @@ export class TripsService {
   private isValidTransition(from: TripStatus, to: TripStatus): boolean {
     const validTransitions: Record<TripStatus, TripStatus[]> = {
       [TripStatus.SCHEDULED]: [TripStatus.IN_PROGRESS],
-      [TripStatus.IN_PROGRESS]: [TripStatus.ARRIVED_SCHOOL],
+      [TripStatus.IN_PROGRESS]: [TripStatus.ARRIVED_SCHOOL, TripStatus.COMPLETED], // Allow direct completion
       [TripStatus.ARRIVED_SCHOOL]: [TripStatus.RETURN_IN_PROGRESS],
       [TripStatus.RETURN_IN_PROGRESS]: [TripStatus.COMPLETED],
       [TripStatus.COMPLETED]: [],

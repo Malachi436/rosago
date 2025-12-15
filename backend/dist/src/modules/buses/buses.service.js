@@ -32,9 +32,17 @@ let BusesService = class BusesService {
         });
     }
     async create(data) {
-        return this.prisma.bus.create({
-            data,
-        });
+        try {
+            return await this.prisma.bus.create({
+                data,
+            });
+        }
+        catch (error) {
+            if (error.code === 'P2002') {
+                throw new Error(`A bus with plate number "${data.plateNumber}" already exists`);
+            }
+            throw error;
+        }
     }
     async update(id, data) {
         return this.prisma.bus.update({
@@ -61,9 +69,14 @@ let BusesService = class BusesService {
     async findByCompanyId(companyId) {
         return this.prisma.bus.findMany({
             where: {
-                driver: {
-                    user: { companyId },
-                },
+                OR: [
+                    { companyId: companyId },
+                    {
+                        driver: {
+                            user: { companyId },
+                        },
+                    },
+                ],
             },
             include: {
                 driver: {

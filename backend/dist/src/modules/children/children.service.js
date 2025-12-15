@@ -39,6 +39,54 @@ let ChildrenService = class ChildrenService {
             data,
         });
     }
+    async bulkOnboard(bulkData) {
+        const { companyId, schoolId, children } = bulkData;
+        if (!children || !Array.isArray(children) || children.length === 0) {
+            throw new common_1.BadRequestException('Children array is required and must not be empty');
+        }
+        if (!schoolId) {
+            throw new common_1.BadRequestException('School ID is required');
+        }
+        const school = await this.prisma.school.findFirst({
+            where: {
+                id: schoolId,
+                companyId: companyId,
+            },
+        });
+        if (!school) {
+            throw new common_1.NotFoundException('School not found or does not belong to this company');
+        }
+        const createdChildren = await this.prisma.$transaction(children.map((childData) => {
+            const uniqueCode = this.generateCodeSync();
+            return this.prisma.child.create({
+                data: {
+                    firstName: childData.firstName,
+                    lastName: childData.lastName,
+                    dateOfBirth: childData.dateOfBirth ? new Date(childData.dateOfBirth) : new Date(),
+                    grade: childData.grade || null,
+                    schoolId: schoolId,
+                    parentPhone: childData.parentPhone || null,
+                    routeId: childData.routeId || null,
+                    daysUntilPayment: parseInt(childData.daysUntilPayment) || 0,
+                    uniqueCode: uniqueCode,
+                    pickupType: 'SCHOOL',
+                    isClaimed: false,
+                },
+            });
+        }));
+        return {
+            created: createdChildren.length,
+            children: createdChildren,
+        };
+    }
+    generateCodeSync() {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        let code = '';
+        for (let i = 0; i < 8; i++) {
+            code += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return code;
+    }
     async update(id, data) {
         return this.prisma.child.update({
             where: { id },
@@ -74,14 +122,14 @@ let ChildrenService = class ChildrenService {
         if (!child) {
             throw new common_1.NotFoundException('Invalid child code');
         }
-        if (child.isLinked && child.parentId) {
+        if (child.isClaimed && child.parentId) {
             throw new common_1.BadRequestException('This child is already linked to a parent');
         }
         const updatedChild = await this.prisma.child.update({
             where: { id: child.id },
             data: {
                 parentId,
-                isLinked: true,
+                isClaimed: true,
                 homeLatitude: linkDto.homeLatitude,
                 homeLongitude: linkDto.homeLongitude,
                 homeAddress: linkDto.homeAddress,

@@ -16,14 +16,14 @@ export declare class UsersService {
         schoolId?: string | null;
     }): Promise<{
         id: string;
-        email: string;
-        phone: string | null;
+        companyId: string | null;
         createdAt: Date;
         updatedAt: Date;
-        companyId: string | null;
+        email: string;
         passwordHash: string;
         firstName: string;
         lastName: string;
+        phone: string | null;
         role: import(".prisma/client").$Enums.Role;
         refreshToken: string | null;
         schoolId: string | null;

@@ -14,13 +14,22 @@ interface Child {
   pickupLatitude?: number;
   pickupLongitude?: number;
   pickupDescription?: string;
-  parent: {
+  parentPhone?: string;
+  routeId?: string | null;
+  route?: {
+    id: string;
+    name: string;
+    bus?: {
+      plateNumber: string;
+    };
+  } | null;
+  parent?: {
     id: string;
     email: string;
     firstName: string;
     lastName: string;
     phone?: string;
-  };
+  } | null;
   school: {
     id: string;
     name: string;
@@ -61,11 +70,13 @@ export default function ChildrenPage({
   const { companyId } = use(params);
   const [children, setChildren] = useState<Child[]>([]);
   const [payments, setPayments] = useState<Map<string, PaymentStatus>>(new Map());
+  const [routes, setRoutes] = useState<Array<{ id: string; name: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSchool, setSelectedSchool] = useState('');
   const [schools, setSchools] = useState<Array<{ id: string; name: string }>>([]);
+  const [assigningChildId, setAssigningChildId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -77,6 +88,10 @@ export default function ChildrenPage({
       // Fetch schools
       const schoolsData = await apiClient.get(`/admin/company/${companyId}/schools`);
       setSchools(Array.isArray(schoolsData) ? schoolsData : []);
+
+      // Fetch routes
+      const routesData = await apiClient.get(`/admin/company/${companyId}/routes`);
+      setRoutes(Array.isArray(routesData) ? routesData : []);
 
       // Fetch children
       const childrenData = await apiClient.get(`/admin/company/${companyId}/children`);
@@ -99,10 +114,23 @@ export default function ChildrenPage({
     }
   };
 
+  const handleAssignRoute = async (childId: string, routeId: string) => {
+    try {
+      await apiClient.patch(`/children/${childId}`, {
+        routeId: routeId || null,
+      });
+      alert('✅ Route assigned successfully!');
+      setAssigningChildId(null);
+      fetchData(); // Refresh the data
+    } catch (err: any) {
+      alert('❌ Error: ' + (err.response?.data?.message || 'Failed to assign route'));
+    }
+  };
+
   const filteredChildren = children.filter((child) => {
     const matchesSearch =
       `${child.firstName} ${child.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      child.parent.email.toLowerCase().includes(searchTerm.toLowerCase());
+      (child.parent?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
     const matchesSchool = !selectedSchool || child.school.id === selectedSchool;
     return matchesSearch && matchesSchool;
   });
@@ -225,11 +253,69 @@ export default function ChildrenPage({
                     {/* Parent Info */}
                     <div>
                       <p className="text-sm text-slate-500 font-semibold mb-1">Parent</p>
-                      <p className="font-semibold text-slate-900">
-                        {child.parent.firstName} {child.parent.lastName}
-                      </p>
-                      <p className="text-sm text-slate-600">📧 {child.parent.email}</p>
-                      <p className="text-sm text-slate-600">📱 {child.parent.phone || 'N/A'}</p>
+                      {child.parent ? (
+                        <>
+                          <p className="font-semibold text-slate-900">
+                            {child.parent.firstName} {child.parent.lastName}
+                          </p>
+                          <p className="text-sm text-slate-600">📧 {child.parent.email}</p>
+                          <p className="text-sm text-slate-600">📱 {child.parent.phone || 'N/A'}</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-slate-500 italic">Not claimed yet</p>
+                          {child.parentPhone && (
+                            <p className="text-sm text-slate-600">📱 {child.parentPhone}</p>
+                          )}
+                        </>
+                      )}
+                    </div>
+
+                    {/* Route Assignment */}
+                    <div>
+                      <p className="text-sm text-slate-500 font-semibold mb-1">Route & Bus</p>
+                      {child.route ? (
+                        <div className="bg-blue-50 border border-blue-200 rounded p-2">
+                          <p className="text-sm font-semibold text-blue-900">{child.route.name}</p>
+                          {child.route.bus && (
+                            <p className="text-xs text-blue-700">🚌 {child.route.bus.plateNumber}</p>
+                          )}
+                          <button
+                            onClick={() => setAssigningChildId(child.id)}
+                            className="mt-1 text-xs text-blue-600 hover:text-blue-800 font-semibold"
+                          >
+                            Change Route
+                          </button>
+                        </div>
+                      ) : assigningChildId === child.id ? (
+                        <div className="space-y-2">
+                          <select
+                            onChange={(e) => handleAssignRoute(child.id, e.target.value)}
+                            className="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            defaultValue=""
+                          >
+                            <option value="">Select route...</option>
+                            {routes.map((route) => (
+                              <option key={route.id} value={route.id}>
+                                {route.name}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={() => setAssigningChildId(null)}
+                            className="text-xs text-slate-600 hover:text-slate-800"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setAssigningChildId(child.id)}
+                          className="w-full bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded text-sm font-semibold transition"
+                        >
+                          + Assign Route
+                        </button>
+                      )}
                     </div>
 
                     {/* Payment Status */}
@@ -247,17 +333,21 @@ export default function ChildrenPage({
                         </p>
                       )}
                     </div>
+                  </div>
 
-                    {/* Pickup & Driver Info */}
-                    <div>
-                      <p className="text-sm text-slate-500 font-semibold mb-1">Pickup Type</p>
-                      <p className="font-semibold text-slate-900">{child.pickupType}</p>
-                      {child.pickupDescription && (
-                        <p className="text-sm text-slate-600">📍 {child.pickupDescription}</p>
-                      )}
+                  {/* Pickup Info - Full Width Below */}
+                  <div className="mt-4 pt-4 border-t border-slate-200">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-slate-500 font-semibold mb-1">Pickup Type</p>
+                        <p className="font-semibold text-slate-900">{child.pickupType}</p>
+                        {child.pickupDescription && (
+                          <p className="text-sm text-slate-600">📍 {child.pickupDescription}</p>
+                        )}
+                      </div>
                       {child.tripAssignments && child.tripAssignments.length > 0 && (
-                        <div className="mt-2">
-                          <p className="text-sm text-slate-500 font-semibold">🚌 Driver</p>
+                        <div>
+                          <p className="text-sm text-slate-500 font-semibold mb-1">🚌 Current Trip</p>
                           <p className="text-sm text-slate-900">
                             {child.tripAssignments[0].trip.bus.driver.user.firstName}{' '}
                             {child.tripAssignments[0].trip.bus.driver.user.lastName}

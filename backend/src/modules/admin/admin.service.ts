@@ -139,6 +139,27 @@ export class AdminService {
     });
   }
 
+  async getCompanyRoutes(companyId: string): Promise<any> {
+    return this.prisma.route.findMany({
+      where: {
+        school: { companyId },
+      },
+      include: {
+        school: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        stops: {
+          orderBy: {
+            order: 'asc',
+          },
+        },
+      },
+    });
+  }
+
   async getCompanyChildren(companyId: string): Promise<any> {
     return this.prisma.child.findMany({
       where: {
@@ -146,14 +167,19 @@ export class AdminService {
       },
       select: {
         id: true,
+        uniqueCode: true,
         firstName: true,
         lastName: true,
+        grade: true,
         parentId: true,
+        parentPhone: true,
         schoolId: true,
         pickupType: true,
         pickupDescription: true,
         homeLatitude: true,
         homeLongitude: true,
+        isClaimed: true,
+        daysUntilPayment: true,
         parent: {
           select: {
             id: true,

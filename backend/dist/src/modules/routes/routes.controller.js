@@ -18,6 +18,7 @@ const routes_service_1 = require("./routes.service");
 const route_auto_service_1 = require("./route-auto.service");
 const roles_decorator_1 = require("../roles/roles.decorator");
 const roles_guard_1 = require("../roles/roles.guard");
+const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
 let RoutesController = class RoutesController {
     constructor(routesService, routeAutoService) {
         this.routesService = routesService;
@@ -104,7 +105,7 @@ __decorate([
 ], RoutesController.prototype, "autoGenerateRoutes", null);
 exports.RoutesController = RoutesController = __decorate([
     (0, common_1.Controller)('routes'),
-    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     __metadata("design:paramtypes", [routes_service_1.RoutesService,
         route_auto_service_1.RouteAutoService])
 ], RoutesController);

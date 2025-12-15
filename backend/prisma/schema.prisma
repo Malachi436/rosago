@@ -95,6 +95,7 @@ model Company {
   currency        String          @default("UGX")
   schools         School[]
   users           User[]
+  buses           Bus[]           // Buses owned by this company
   fareHistories   FareHistory[]
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
@@ -108,6 +109,8 @@ model School {
   latitude  Float?
   longitude Float?
   address   String?
+  phone     String?  // Added for contact information
+  email     String?  // Added for contact information
   users     User[]
   children  Child[]
   routes    Route[]
@@ -165,8 +168,11 @@ model Child {
   grade             String? // e.g., "Grade 1", "Grade 2"
   parentId          String?
   parent            User?             @relation("ParentChild", fields: [parentId], references: [id])
+  parentPhone       String? // For onboarding before parent claims
   schoolId          String
   school            School            @relation(fields: [schoolId], references: [id])
+  routeId           String? // Which route/bus this child is assigned to
+  route             Route?            @relation(fields: [routeId], references: [id])
   pickupType        PickupType        @default(SCHOOL)
   pickupLatitude    Float?
   pickupLongitude   Float?
@@ -175,7 +181,10 @@ model Child {
   homeLongitude     Float?
   homeAddress       String?
   colorCode         String            @default("#3B82F6") // Default blue
-  isLinked          Boolean           @default(false) // Whether parent has claimed this child
+  isClaimed         Boolean           @default(false) // Whether parent has claimed this child (changed from isLinked)
+  daysUntilPayment  Int? // Payment tracking from legacy school system
+  allergies         String? // Child allergies
+  specialInstructions String? // Special instructions for driver
   attendance        ChildAttendance[]
   tripExceptions    TripException[]
   earlyPickupRequests EarlyPickupRequest[]
@@ -186,14 +195,19 @@ model Child {
   @@index([parentId])
   @@index([schoolId])
   @@index([uniqueCode])
+  @@index([routeId])
+  @@index([parentPhone])
 }
 
 model Bus {
   id              String           @id @default(uuid())
   plateNumber     String           @unique
   capacity        Int
-  driverId        String
-  driver          Driver           @relation(fields: [driverId], references: [id])
+  companyId       String?          // Company that owns this bus (optional for migration)
+  company         Company?         @relation(fields: [companyId], references: [id])
+  driverId        String?          // Made optional - driver can be assigned later
+  driver          Driver?          @relation(fields: [driverId], references: [id])
+  routes          Route[] // Routes that use this bus
   locations       BusLocation[]
   trips           Trip[]
   scheduledRoutes ScheduledRoute[]
@@ -201,6 +215,7 @@ model Bus {
   updatedAt       DateTime         @updatedAt
 
   @@index([driverId])
+  @@index([companyId])
 }
 
 model Route {
@@ -208,6 +223,10 @@ model Route {
   name            String
   schoolId        String
   school          School           @relation(fields: [schoolId], references: [id])
+  busId           String? // Which bus runs this route
+  bus             Bus?             @relation(fields: [busId], references: [id])
+  shift           String? // "MORNING" or "AFTERNOON"
+  children        Child[] // Children assigned to this route
   stops           Stop[]
   trips           Trip[]
   scheduledRoutes ScheduledRoute[]
@@ -215,6 +234,7 @@ model Route {
   updatedAt       DateTime         @updatedAt
 
   @@index([schoolId])
+  @@index([busId])
 }
 
 model ScheduledRoute {

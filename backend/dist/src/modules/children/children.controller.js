@@ -29,6 +29,9 @@ let ChildrenController = class ChildrenController {
     create(createChildDto) {
         return this.childrenService.create(createChildDto);
     }
+    bulkOnboard(bulkOnboardDto) {
+        return this.childrenService.bulkOnboard(bulkOnboardDto);
+    }
     findAll() {
         return this.childrenService.findAll();
     }
@@ -88,6 +91,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], ChildrenController.prototype, "create", null);
+__decorate([
+    (0, common_1.Post)('bulk-onboard'),
+    (0, roles_decorator_1.Roles)('PLATFORM_ADMIN', 'COMPANY_ADMIN'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], ChildrenController.prototype, "bulkOnboard", null);
 __decorate([
     (0, common_1.Get)(),
     (0, roles_decorator_1.Roles)('PLATFORM_ADMIN', 'COMPANY_ADMIN'),

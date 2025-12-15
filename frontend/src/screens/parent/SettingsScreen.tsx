@@ -112,23 +112,65 @@ export default function SettingsScreen({ navigation }: Props) {
         <Animated.View entering={FadeInDown.delay(200).springify()}>
           <Text style={styles.sectionTitle}>Children</Text>
           <LiquidGlassCard intensity="medium" className="mb-4">
-            <Pressable
-              onPress={() => navigation.navigate("ManageChildren")}
-              style={styles.settingItem}
-            >
-              <View style={styles.settingLeft}>
-                <View style={[styles.settingIcon, { backgroundColor: colors.primary.teal + "20" }]}>
-                  <Ionicons name="people" size={20} color={colors.primary.teal} />
+            <View style={styles.settingsGroup}>
+              <Pressable
+                onPress={() => navigation.navigate("ManageChildren")}
+                style={styles.settingItem}
+              >
+                <View style={styles.settingLeft}>
+                  <View style={[styles.settingIcon, { backgroundColor: colors.primary.teal + "20" }]}>
+                    <Ionicons name="people" size={20} color={colors.primary.teal} />
+                  </View>
+                  <View style={styles.settingText}>
+                    <Text style={styles.settingTitle}>Manage Children</Text>
+                    <Text style={styles.settingSubtitle}>
+                      Add or edit your children information
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.settingText}>
-                  <Text style={styles.settingTitle}>Manage Children</Text>
-                  <Text style={styles.settingSubtitle}>
-                    Add or edit your children information
-                  </Text>
+                <Ionicons name="chevron-forward" size={20} color={colors.neutral.textSecondary} />
+              </Pressable>
+
+              <View style={styles.divider} />
+
+              <Pressable
+                onPress={() => navigation.navigate("LinkChild")}
+                style={styles.settingItem}
+              >
+                <View style={styles.settingLeft}>
+                  <View style={[styles.settingIcon, { backgroundColor: colors.accent.successGreen + "20" }]}>
+                    <Ionicons name="link" size={20} color={colors.accent.successGreen} />
+                  </View>
+                  <View style={styles.settingText}>
+                    <Text style={styles.settingTitle}>Link Child with Code</Text>
+                    <Text style={styles.settingSubtitle}>
+                      Enter code from school to add child
+                    </Text>
+                  </View>
                 </View>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.neutral.textSecondary} />
-            </Pressable>
+                <Ionicons name="chevron-forward" size={20} color={colors.neutral.textSecondary} />
+              </Pressable>
+
+              <View style={styles.divider} />
+
+              <Pressable
+                onPress={() => navigation.navigate("RequestLocationChange")}
+                style={styles.settingItem}
+              >
+                <View style={styles.settingLeft}>
+                  <View style={[styles.settingIcon, { backgroundColor: colors.primary.blue + "20" }]}>
+                    <Ionicons name="navigate" size={20} color={colors.primary.blue} />
+                  </View>
+                  <View style={styles.settingText}>
+                    <Text style={styles.settingTitle}>Change Pickup Location</Text>
+                    <Text style={styles.settingSubtitle}>
+                      Request to change home pickup address
+                    </Text>
+                  </View>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={colors.neutral.textSecondary} />
+              </Pressable>
+            </View>
           </LiquidGlassCard>
         </Animated.View>
 

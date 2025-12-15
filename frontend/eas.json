@@ -15,8 +15,8 @@
         "gradleCommand": ":app:assembleDebug"
       },
       "env": {
-        "API_URL": "http://192.168.0.182:3000",
-        "WS_URL": "ws://192.168.0.182:3000"
+        "API_URL": "http://192.168.100.2:3000",
+        "WS_URL": "ws://192.168.100.2:3000"
       }
     },
     "preview": {

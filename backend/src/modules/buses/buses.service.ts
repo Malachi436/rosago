@@ -25,9 +25,16 @@ export class BusesService {
   }
 
   async create(data: any): Promise<Bus> {
-    return this.prisma.bus.create({
-      data,
-    });
+    try {
+      return await this.prisma.bus.create({
+        data,
+      });
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new Error(`A bus with plate number "${data.plateNumber}" already exists`);
+      }
+      throw error;
+    }
   }
 
   async update(id: string, data: any): Promise<Bus> {
@@ -56,10 +63,16 @@ export class BusesService {
 
   async findByCompanyId(companyId: string): Promise<any[]> {
     return this.prisma.bus.findMany({
+
       where: {
-        driver: {
-          user: { companyId },
-        },
+        OR: [
+          { companyId: companyId },
+          {
+            driver: {
+              user: { companyId },
+            },
+          },
+        ],
       },
       include: {
         driver: {

@@ -9,9 +9,9 @@ export declare class PaymentsController {
     constructor(paymentsService: PaymentsService);
     createPaymentIntent(createPaymentIntentDto: CreatePaymentIntentDto): Promise<{
         id: string;
-        currency: string;
         createdAt: Date;
         updatedAt: Date;
+        currency: string;
         parentId: string;
         status: string;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
@@ -23,9 +23,9 @@ export declare class PaymentsController {
     }>;
     getPaymentHistory(parentId: string): Promise<{
         id: string;
-        currency: string;
         createdAt: Date;
         updatedAt: Date;
+        currency: string;
         parentId: string;
         status: string;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
@@ -34,9 +34,9 @@ export declare class PaymentsController {
     }[]>;
     getPaymentById(id: string): Promise<{
         id: string;
-        currency: string;
         createdAt: Date;
         updatedAt: Date;
+        currency: string;
         parentId: string;
         status: string;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;

@@ -260,7 +260,22 @@ export default function ParentHomeScreen() {
               )}
               
               {!isLoading && !error && children.length === 0 && (
-                <Text style={styles.emptyText}>No children added yet</Text>
+                <LiquidGlassCard intensity="medium">
+                  <View style={styles.emptyChildrenCard}>
+                    <Ionicons name="person-add" size={48} color={colors.primary.blue} />
+                    <Text style={styles.emptyChildrenTitle}>No children added yet</Text>
+                    <Text style={styles.emptyChildrenSubtitle}>
+                      Link your child using the code provided by your school
+                    </Text>
+                    <Pressable
+                      onPress={() => navigation.navigate("LinkChild")}
+                      style={styles.linkChildButton}
+                    >
+                      <Ionicons name="link" size={20} color={colors.neutral.pureWhite} />
+                      <Text style={styles.linkChildButtonText}>Enter Child Code</Text>
+                    </Pressable>
+                  </View>
+                </LiquidGlassCard>
               )}
               
               {children.map((child, index) => (
@@ -541,5 +556,38 @@ const styles = StyleSheet.create({
     color: colors.neutral.textSecondary,
     textAlign: "center",
     marginVertical: 12,
+  },
+  emptyChildrenCard: {
+    padding: 32,
+    alignItems: "center",
+    gap: 16,
+  },
+  emptyChildrenTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.neutral.textPrimary,
+    textAlign: "center",
+  },
+  emptyChildrenSubtitle: {
+    fontSize: 14,
+    color: colors.neutral.textSecondary,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  linkChildButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primary.blue,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    gap: 8,
+    marginTop: 8,
+  },
+  linkChildButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.neutral.pureWhite,
   },
 });

@@ -10,9 +10,11 @@ export class TripAutomationService {
   constructor(private prisma: PrismaService) {}
 
   /**
-   * Runs every day at midnight to create trips for the day
+   * Runs every day at 2:00 AM to create trips for the day
+   * This gives enough time after midnight for any late-night updates
+   * and ensures trips are ready when drivers start their morning routine
    */
-  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  @Cron('0 2 * * *') // Every day at 2:00 AM
   async generateDailyTrips() {
     this.logger.log('Starting daily trip generation...');
 

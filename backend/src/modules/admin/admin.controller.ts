@@ -53,6 +53,12 @@ export class AdminController {
     return this.adminService.getCompanySchools(companyId);
   }
 
+  @Get('company/:companyId/routes')
+  @Roles('PLATFORM_ADMIN', 'COMPANY_ADMIN')
+  async getCompanyRoutes(@Param('companyId') companyId: string) {
+    return this.adminService.getCompanyRoutes(companyId);
+  }
+
   @Get('company/:companyId/children')
   @Roles('PLATFORM_ADMIN', 'COMPANY_ADMIN')
   async getCompanyChildren(@Param('companyId') companyId: string) {
@@ -168,5 +174,13 @@ export class AdminController {
   @Roles('PLATFORM_ADMIN', 'COMPANY_ADMIN')
   async getFareHistory(@Param('companyId') companyId: string) {
     return this.adminService.getFareHistory(companyId);
+  }
+
+  @Get('company/:companyId/payment-plans')
+  @Roles('PLATFORM_ADMIN', 'COMPANY_ADMIN')
+  async getCompanyPaymentPlans(@Param('companyId') companyId: string) {
+    // TODO: Implement payment plans feature
+    // For now, return empty array to prevent 404 error
+    return [];
   }
 }

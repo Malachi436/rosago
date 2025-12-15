@@ -3,9 +3,10 @@ import { RoutesService } from './routes.service';
 import { RouteAutoService } from './route-auto.service';
 import { Roles } from '../roles/roles.decorator';
 import { RolesGuard } from '../roles/roles.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('routes')
-@UseGuards(RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class RoutesController {
   constructor(
     private readonly routesService: RoutesService,

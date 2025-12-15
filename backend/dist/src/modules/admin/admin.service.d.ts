@@ -11,6 +11,7 @@ export declare class AdminService {
     getAllCompanies(): Promise<any>;
     getAllSchools(): Promise<any>;
     getCompanySchools(companyId: string): Promise<any>;
+    getCompanyRoutes(companyId: string): Promise<any>;
     getCompanyChildren(companyId: string): Promise<any>;
     getChildrenPaymentStatus(companyId: string): Promise<any>;
     getCompanyDrivers(companyId: string): Promise<any>;
@@ -28,8 +29,8 @@ export declare class AdminService {
     updateCompanyFare(companyId: string, newFare: number, adminId: string, reason?: string): Promise<{
         company: {
             id: string;
-            name: string;
             email: string;
+            name: string;
             phone: string | null;
             address: string | null;
             baseFare: number;
@@ -52,9 +53,9 @@ export declare class AdminService {
         id: string;
         createdAt: Date;
         companyId: string;
-        reason: string | null;
         oldFare: number;
         newFare: number;
         changedBy: string;
+        reason: string | null;
     }[]>;
 }

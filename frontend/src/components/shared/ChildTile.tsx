@@ -125,6 +125,56 @@ export function ChildTile({ child, onPress, showStatus = true, tripId, showActio
     );
   };
 
+  const handleUnskipTrip = async () => {
+    if (!tripId) {
+      Alert.alert('No Active Trip', 'There is no active trip for your child today.');
+      return;
+    }
+
+    // Prompt for reason
+    Alert.prompt(
+      '🚨 Emergency Unskip',
+      'Please explain why you need emergency pickup:',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Request Pickup',
+          style: 'default',
+          onPress: async (reason?: string) => {
+            if (!reason || !reason.trim()) {
+              Alert.alert('Error', 'Please provide a reason for emergency pickup');
+              return;
+            }
+
+            try {
+              setIsLoading(true);
+              await apiClient.post('/trip-exceptions/unskip', {
+                childId: child.id,
+                tripId,
+                reason: reason.trim(),
+              });
+              setTripSkipped(false);
+              Alert.alert(
+                'Driver Notified!',
+                'The driver has been notified about the urgent pickup request and must acknowledge before proceeding.'
+              );
+              onActionComplete?.();
+            } catch (error: any) {
+              const message = error.response?.data?.message || 'Failed to request emergency pickup';
+              Alert.alert('Error', message);
+            } finally {
+              setIsLoading(false);
+            }
+          },
+        },
+      ],
+      'plain-text'
+    );
+  };
+
   return (
     <View>
       <Pressable onPress={onPress} disabled={!onPress}>
@@ -194,6 +244,26 @@ export function ChildTile({ child, onPress, showStatus = true, tripId, showActio
               <>
                 <Ionicons name="close-circle" size={18} color={colors.neutral.pureWhite} />
                 <Text style={styles.actionButtonText}>Skip Today</Text>
+              </>
+            )}
+          </Pressable>
+        </View>
+      )}
+
+      {/* Unskip Button - Shows when trip is skipped */}
+      {showActions && tripSkipped && (
+        <View style={styles.actionsContainer}>
+          <Pressable
+            style={[styles.actionButton, styles.unskipButton, !tripId && styles.actionButtonDisabled]}
+            onPress={handleUnskipTrip}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator size="small" color={colors.neutral.pureWhite} />
+            ) : (
+              <>
+                <Ionicons name="alert-circle" size={18} color={colors.neutral.pureWhite} />
+                <Text style={styles.actionButtonText}>🚨 Emergency Unskip</Text>
               </>
             )}
           </Pressable>
@@ -286,6 +356,9 @@ const styles = StyleSheet.create({
   },
   skipButton: {
     backgroundColor: colors.status.dangerRed,
+  },
+  unskipButton: {
+    backgroundColor: colors.accent.sunsetOrange,
   },
   actionButtonText: {
     color: colors.neutral.pureWhite,

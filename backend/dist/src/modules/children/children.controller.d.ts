@@ -14,7 +14,9 @@ export declare class ChildrenController {
         dateOfBirth: Date;
         grade: string | null;
         parentId: string | null;
+        parentPhone: string | null;
         schoolId: string;
+        routeId: string | null;
         pickupType: import(".prisma/client").$Enums.PickupType;
         pickupLatitude: number | null;
         pickupLongitude: number | null;
@@ -23,9 +25,16 @@ export declare class ChildrenController {
         homeLongitude: number | null;
         homeAddress: string | null;
         colorCode: string;
-        isLinked: boolean;
+        isClaimed: boolean;
+        daysUntilPayment: number | null;
+        allergies: string | null;
+        specialInstructions: string | null;
         createdAt: Date;
         updatedAt: Date;
+    }>;
+    bulkOnboard(bulkOnboardDto: any): Promise<{
+        created: number;
+        children: import(".prisma/client").Child[];
     }>;
     findAll(): Promise<{
         id: string;
@@ -35,7 +44,9 @@ export declare class ChildrenController {
         dateOfBirth: Date;
         grade: string | null;
         parentId: string | null;
+        parentPhone: string | null;
         schoolId: string;
+        routeId: string | null;
         pickupType: import(".prisma/client").$Enums.PickupType;
         pickupLatitude: number | null;
         pickupLongitude: number | null;
@@ -44,7 +55,10 @@ export declare class ChildrenController {
         homeLongitude: number | null;
         homeAddress: string | null;
         colorCode: string;
-        isLinked: boolean;
+        isClaimed: boolean;
+        daysUntilPayment: number | null;
+        allergies: string | null;
+        specialInstructions: string | null;
         createdAt: Date;
         updatedAt: Date;
     }[]>;
@@ -56,7 +70,9 @@ export declare class ChildrenController {
         dateOfBirth: Date;
         grade: string | null;
         parentId: string | null;
+        parentPhone: string | null;
         schoolId: string;
+        routeId: string | null;
         pickupType: import(".prisma/client").$Enums.PickupType;
         pickupLatitude: number | null;
         pickupLongitude: number | null;
@@ -65,7 +81,10 @@ export declare class ChildrenController {
         homeLongitude: number | null;
         homeAddress: string | null;
         colorCode: string;
-        isLinked: boolean;
+        isClaimed: boolean;
+        daysUntilPayment: number | null;
+        allergies: string | null;
+        specialInstructions: string | null;
         createdAt: Date;
         updatedAt: Date;
     }>;
@@ -77,7 +96,9 @@ export declare class ChildrenController {
         dateOfBirth: Date;
         grade: string | null;
         parentId: string | null;
+        parentPhone: string | null;
         schoolId: string;
+        routeId: string | null;
         pickupType: import(".prisma/client").$Enums.PickupType;
         pickupLatitude: number | null;
         pickupLongitude: number | null;
@@ -86,7 +107,10 @@ export declare class ChildrenController {
         homeLongitude: number | null;
         homeAddress: string | null;
         colorCode: string;
-        isLinked: boolean;
+        isClaimed: boolean;
+        daysUntilPayment: number | null;
+        allergies: string | null;
+        specialInstructions: string | null;
         createdAt: Date;
         updatedAt: Date;
     }[]>;
@@ -98,7 +122,9 @@ export declare class ChildrenController {
         dateOfBirth: Date;
         grade: string | null;
         parentId: string | null;
+        parentPhone: string | null;
         schoolId: string;
+        routeId: string | null;
         pickupType: import(".prisma/client").$Enums.PickupType;
         pickupLatitude: number | null;
         pickupLongitude: number | null;
@@ -107,7 +133,10 @@ export declare class ChildrenController {
         homeLongitude: number | null;
         homeAddress: string | null;
         colorCode: string;
-        isLinked: boolean;
+        isClaimed: boolean;
+        daysUntilPayment: number | null;
+        allergies: string | null;
+        specialInstructions: string | null;
         createdAt: Date;
         updatedAt: Date;
     }>;
@@ -119,7 +148,9 @@ export declare class ChildrenController {
         dateOfBirth: Date;
         grade: string | null;
         parentId: string | null;
+        parentPhone: string | null;
         schoolId: string;
+        routeId: string | null;
         pickupType: import(".prisma/client").$Enums.PickupType;
         pickupLatitude: number | null;
         pickupLongitude: number | null;
@@ -128,7 +159,10 @@ export declare class ChildrenController {
         homeLongitude: number | null;
         homeAddress: string | null;
         colorCode: string;
-        isLinked: boolean;
+        isClaimed: boolean;
+        daysUntilPayment: number | null;
+        allergies: string | null;
+        specialInstructions: string | null;
         createdAt: Date;
         updatedAt: Date;
     }>;
@@ -151,6 +185,8 @@ export declare class ChildrenController {
             createdAt: Date;
             updatedAt: Date;
             name: string;
+            email: string | null;
+            phone: string | null;
             companyId: string;
             latitude: number | null;
             longitude: number | null;
@@ -164,7 +200,9 @@ export declare class ChildrenController {
         dateOfBirth: Date;
         grade: string | null;
         parentId: string | null;
+        parentPhone: string | null;
         schoolId: string;
+        routeId: string | null;
         pickupType: import(".prisma/client").$Enums.PickupType;
         pickupLatitude: number | null;
         pickupLongitude: number | null;
@@ -173,7 +211,10 @@ export declare class ChildrenController {
         homeLongitude: number | null;
         homeAddress: string | null;
         colorCode: string;
-        isLinked: boolean;
+        isClaimed: boolean;
+        daysUntilPayment: number | null;
+        allergies: string | null;
+        specialInstructions: string | null;
         createdAt: Date;
         updatedAt: Date;
     }>;
@@ -224,6 +265,8 @@ export declare class ChildrenController {
                 createdAt: Date;
                 updatedAt: Date;
                 name: string;
+                email: string | null;
+                phone: string | null;
                 companyId: string;
                 latitude: number | null;
                 longitude: number | null;
@@ -237,7 +280,9 @@ export declare class ChildrenController {
             dateOfBirth: Date;
             grade: string | null;
             parentId: string | null;
+            parentPhone: string | null;
             schoolId: string;
+            routeId: string | null;
             pickupType: import(".prisma/client").$Enums.PickupType;
             pickupLatitude: number | null;
             pickupLongitude: number | null;
@@ -246,7 +291,10 @@ export declare class ChildrenController {
             homeLongitude: number | null;
             homeAddress: string | null;
             colorCode: string;
-            isLinked: boolean;
+            isClaimed: boolean;
+            daysUntilPayment: number | null;
+            allergies: string | null;
+            specialInstructions: string | null;
             createdAt: Date;
             updatedAt: Date;
         };

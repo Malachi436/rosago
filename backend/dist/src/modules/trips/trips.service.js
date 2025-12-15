@@ -145,7 +145,7 @@ let TripsService = class TripsService {
     isValidTransition(from, to) {
         const validTransitions = {
             [client_1.TripStatus.SCHEDULED]: [client_1.TripStatus.IN_PROGRESS],
-            [client_1.TripStatus.IN_PROGRESS]: [client_1.TripStatus.ARRIVED_SCHOOL],
+            [client_1.TripStatus.IN_PROGRESS]: [client_1.TripStatus.ARRIVED_SCHOOL, client_1.TripStatus.COMPLETED],
             [client_1.TripStatus.ARRIVED_SCHOOL]: [client_1.TripStatus.RETURN_IN_PROGRESS],
             [client_1.TripStatus.RETURN_IN_PROGRESS]: [client_1.TripStatus.COMPLETED],
             [client_1.TripStatus.COMPLETED]: [],

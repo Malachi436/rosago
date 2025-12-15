@@ -32,6 +32,7 @@ export default function DriverHomeScreen() {
   const [error, setError] = useState<string | null>(null);
   const [isGPSTracking, setIsGPSTracking] = useState(false);
   const [gpsError, setGpsError] = useState<string | null>(null);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   const fetchTodayTrip = async () => {
     try {
@@ -67,6 +68,21 @@ export default function DriverHomeScreen() {
       }
     }, [user?.id])
   );
+
+  const fetchUnreadNotifications = async () => {
+    try {
+      if (!user?.id) return;
+      const response: any = await apiClient.get(`/notifications/unread-count/${user.id}`);
+      setUnreadNotifications(response.count || 0);
+    } catch (err) {
+      console.error('Error loading notifications count:', err);
+    }
+  };
+
+  // Fetch unread notifications on mount and focus
+  useEffect(() => {
+    fetchUnreadNotifications();
+  }, [user?.id]);
 
   // Connect to WebSocket when component mounts
   useEffect(() => {
@@ -119,8 +135,89 @@ export default function DriverHomeScreen() {
 
   const childrenOnTrip = trip?.attendances || [];
 
-  const handleStartTrip = () => {
-    navigation.navigate("ChildList");
+  const handleStartTrip = async () => {
+    if (!trip) return;
+
+    if (trip.status === 'SCHEDULED') {
+      // Transition to IN_PROGRESS
+      Alert.alert(
+        'Start Trip',
+        'Are you ready to start this trip? GPS tracking will begin.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Start Trip',
+            style: 'default',
+            onPress: async () => {
+              try {
+                await apiClient.patch(`/trips/${trip.id}/status`, {
+                  status: 'IN_PROGRESS',
+                  userId: user?.id,
+                });
+                
+                // Auto-start GPS tracking
+                if (!isGPSTracking) {
+                  await toggleGPSTracking();
+                }
+                
+                Alert.alert('Trip Started', 'Trip is now in progress. Safe driving!');
+                await fetchTodayTrip();
+              } catch (err: any) {
+                Alert.alert('Error', err.response?.data?.message || 'Failed to start trip');
+              }
+            },
+          },
+        ]
+      );
+    } else {
+      // Navigate to attendance if trip is in progress
+      navigation.navigate("Attendance");
+    }
+  };
+
+  const handleEndTrip = async () => {
+    if (!trip) return;
+
+    // Check if trip can be completed
+    const canComplete = trip.status === 'IN_PROGRESS' || 
+                        trip.status === 'ARRIVED_SCHOOL' || 
+                        trip.status === 'RETURN_IN_PROGRESS';
+
+    if (!canComplete) {
+      Alert.alert('Cannot End Trip', 'Trip must be started before it can be completed.');
+      return;
+    }
+
+    Alert.alert(
+      'Complete Trip',
+      'Are you sure you want to end this trip? GPS tracking will stop.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'End Trip',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await apiClient.patch(`/trips/${trip.id}/status`, {
+                status: 'COMPLETED',
+                userId: user?.id,
+              });
+              
+              // Stop GPS tracking
+              if (isGPSTracking) {
+                gpsService.stopTracking();
+                setIsGPSTracking(false);
+              }
+              
+              Alert.alert('Trip Completed', 'Trip has been marked as completed successfully.');
+              await fetchTodayTrip();
+            } catch (err: any) {
+              Alert.alert('Error', err.response?.data?.message || 'Failed to complete trip');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleLogout = () => {
@@ -188,9 +285,24 @@ export default function DriverHomeScreen() {
             <Text style={styles.greeting}>Welcome,</Text>
             <Text style={styles.userName}>{user?.name || 'Driver'}</Text>
           </View>
-          <Pressable onPress={handleLogout} style={styles.logoutButton}>
-            <Ionicons name="log-out-outline" size={24} color={colors.neutral.pureWhite} />
-          </Pressable>
+          <View style={styles.headerActions}>
+            <Pressable 
+              onPress={() => navigation.navigate("DriverNotifications")} 
+              style={styles.notificationButton}
+            >
+              <Ionicons name="notifications" size={24} color={colors.neutral.pureWhite} />
+              {unreadNotifications > 0 && (
+                <View style={styles.notificationBadge}>
+                  <Text style={styles.notificationBadgeText}>
+                    {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                  </Text>
+                </View>
+              )}
+            </Pressable>
+            <Pressable onPress={handleLogout} style={styles.logoutButton}>
+              <Ionicons name="log-out-outline" size={24} color={colors.neutral.pureWhite} />
+            </Pressable>
+          </View>
         </View>
 
         <ScrollView
@@ -274,23 +386,30 @@ export default function DriverHomeScreen() {
                 </LiquidGlassCard>
               </Pressable>
 
-              {/* Start Trip Button */}
+              {/* Trip Action Buttons */}
               {trip.status === "SCHEDULED" && (
                 <LargeCTAButton
-                  title="Start Trip"
+                  title="🚀 Start Trip"
                   onPress={handleStartTrip}
                   variant="success"
                   style={styles.startButton}
                 />
               )}
 
-              {trip.status === "IN_PROGRESS" && (
+              {(trip.status === "IN_PROGRESS" || trip.status === "ARRIVED_SCHOOL" || trip.status === "RETURN_IN_PROGRESS") && (
                 <LargeCTAButton
-                  title="View Attendance"
-                  onPress={handleStartTrip}
-                  variant="primary"
-                  style={styles.startButton}
+                  title="✓ End Trip"
+                  onPress={handleEndTrip}
+                  variant="danger"
+                  style={styles.endButton}
                 />
+              )}
+
+              {trip.status === "COMPLETED" && (
+                <View style={styles.completedBadge}>
+                  <Ionicons name="checkmark-circle" size={24} color={colors.accent.successGreen} />
+                  <Text style={styles.completedText}>Trip Completed</Text>
+                </View>
               )}
             </>
           )}
@@ -351,6 +470,25 @@ export default function DriverHomeScreen() {
               </Pressable>
 
               <Pressable
+                onPress={() => navigation.navigate("DriverNotifications")}
+                style={styles.actionCard}
+              >
+                <LiquidGlassCard intensity="medium">
+                  <View style={styles.actionContent}>
+                    <View>
+                      <Ionicons name="notifications" size={32} color={colors.accent.sunsetOrange} />
+                      {unreadNotifications > 0 && (
+                        <View style={styles.actionBadge}>
+                          <Text style={styles.actionBadgeText}>{unreadNotifications}</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.actionText}>Notifications</Text>
+                  </View>
+                </LiquidGlassCard>
+              </Pressable>
+
+              <Pressable
                 onPress={() => navigation.navigate("DriverSettings")}
                 style={styles.actionCard}
               >
@@ -401,6 +539,36 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "700",
     color: colors.neutral.pureWhite,
+  },
+  headerActions: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  notificationButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
+  notificationBadge: {
+    position: "absolute",
+    top: 4,
+    right: 4,
+    backgroundColor: colors.status.dangerRed,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  },
+  notificationBadgeText: {
+    color: colors.neutral.pureWhite,
+    fontSize: 11,
+    fontWeight: "700",
   },
   logoutButton: {
     width: 44,
@@ -465,6 +633,54 @@ const styles = StyleSheet.create({
     width: "100%",
     marginBottom: 24,
   },
+  endButton: {
+    width: "100%",
+    marginBottom: 24,
+  },
+  tripActionsContainer: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 24,
+    width: "100%",
+  },
+  tripActionButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    borderRadius: 12,
+    gap: 8,
+  },
+  attendanceButton: {
+    backgroundColor: colors.primary.blue,
+  },
+  endTripButton: {
+    backgroundColor: colors.status.dangerRed,
+  },
+  tripActionText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.neutral.pureWhite,
+  },
+  completedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    paddingVertical: 20,
+    paddingHorizontal: 24,
+    backgroundColor: colors.accent.successGreen + "15",
+    borderRadius: 12,
+    marginBottom: 24,
+    borderWidth: 2,
+    borderColor: colors.accent.successGreen,
+  },
+  completedText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.accent.successGreen,
+  },
   section: {
     marginBottom: 24,
   },
@@ -491,6 +707,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: colors.neutral.textPrimary,
+  },
+  actionBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    backgroundColor: colors.status.dangerRed,
+    borderRadius: 12,
+    minWidth: 24,
+    height: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 6,
+    borderWidth: 2,
+    borderColor: colors.neutral.pureWhite,
+  },
+  actionBadgeText: {
+    color: colors.neutral.pureWhite,
+    fontSize: 12,
+    fontWeight: "700",
   },
   loadingContainer: {
     flex: 1,

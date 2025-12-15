@@ -46,8 +46,8 @@ export default function SchoolsPage({
   const fetchSchools = async () => {
     try {
       setLoading(true);
-      const data = await apiClient.get(`/admin/company/${companyId}/schools`);
-      setSchools(data || []);
+      const data = await apiClient.get<School[]>(`/admin/company/${companyId}/schools`);
+      setSchools(Array.isArray(data) ? data : []);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load schools');
       console.error('Error loading schools:', err);

@@ -17,6 +17,7 @@ import DriverSettingsScreen from "../screens/driver/DriverSettingsScreen";
 import PrivacySecurityScreen from "../screens/driver/PrivacySecurityScreen";
 import HelpSupportScreen from "../screens/driver/HelpSupportScreen";
 import EarlyPickupRequestsScreen from "../screens/driver/EarlyPickupRequestsScreen";
+import DriverNotificationsScreen from "../screens/driver/DriverNotificationsScreen";
 
 export type DriverStackParamList = {
   DriverHome: undefined;
@@ -25,6 +26,7 @@ export type DriverStackParamList = {
   RouteMap: undefined;
   BroadcastMessage: undefined;
   EarlyPickupRequests: undefined;
+  DriverNotifications: undefined;
   DriverSettings: undefined;
   PrivacySecurity: undefined;
   HelpSupport: undefined;
@@ -75,6 +77,11 @@ export default function DriverNavigator() {
         name="EarlyPickupRequests"
         component={EarlyPickupRequestsScreen}
         options={{ title: "Early Pickup Requests", headerShown: false }}
+      />
+      <Stack.Screen
+        name="DriverNotifications"
+        component={DriverNotificationsScreen}
+        options={{ title: "Notifications" }}
       />
       <Stack.Screen
         name="DriverSettings"

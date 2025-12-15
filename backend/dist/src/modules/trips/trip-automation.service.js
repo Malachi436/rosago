@@ -141,7 +141,7 @@ let TripAutomationService = TripAutomationService_1 = class TripAutomationServic
 };
 exports.TripAutomationService = TripAutomationService;
 __decorate([
-    (0, schedule_1.Cron)(schedule_1.CronExpression.EVERY_DAY_AT_MIDNIGHT),
+    (0, schedule_1.Cron)('0 2 * * *'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)

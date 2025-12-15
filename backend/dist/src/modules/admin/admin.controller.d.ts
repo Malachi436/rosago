@@ -10,6 +10,7 @@ export declare class AdminController {
     getAllCompanies(): Promise<any>;
     getAllSchools(): Promise<any>;
     getCompanySchools(companyId: string): Promise<any>;
+    getCompanyRoutes(companyId: string): Promise<any>;
     getCompanyChildren(companyId: string): Promise<any>;
     getChildrenPayments(companyId: string): Promise<any>;
     getCompanyDrivers(companyId: string): Promise<any>;
@@ -33,8 +34,8 @@ export declare class AdminController {
     updateCompanyFare(companyId: string, updateFareDto: UpdateFareDto, req: any): Promise<{
         company: {
             id: string;
-            name: string;
             email: string;
+            name: string;
             phone: string | null;
             address: string | null;
             baseFare: number;
@@ -51,9 +52,10 @@ export declare class AdminController {
         id: string;
         createdAt: Date;
         companyId: string;
-        reason: string | null;
         oldFare: number;
         newFare: number;
         changedBy: string;
+        reason: string | null;
     }[]>;
+    getCompanyPaymentPlans(companyId: string): Promise<any[]>;
 }

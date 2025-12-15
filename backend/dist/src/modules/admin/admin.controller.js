@@ -45,6 +45,9 @@ let AdminController = class AdminController {
     async getCompanySchools(companyId) {
         return this.adminService.getCompanySchools(companyId);
     }
+    async getCompanyRoutes(companyId) {
+        return this.adminService.getCompanyRoutes(companyId);
+    }
     async getCompanyChildren(companyId) {
         return this.adminService.getCompanyChildren(companyId);
     }
@@ -96,6 +99,9 @@ let AdminController = class AdminController {
     }
     async getFareHistory(companyId) {
         return this.adminService.getFareHistory(companyId);
+    }
+    async getCompanyPaymentPlans(companyId) {
+        return [];
     }
 };
 exports.AdminController = AdminController;
@@ -153,6 +159,14 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "getCompanySchools", null);
+__decorate([
+    (0, common_1.Get)('company/:companyId/routes'),
+    (0, roles_decorator_1.Roles)('PLATFORM_ADMIN', 'COMPANY_ADMIN'),
+    __param(0, (0, common_1.Param)('companyId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getCompanyRoutes", null);
 __decorate([
     (0, common_1.Get)('company/:companyId/children'),
     (0, roles_decorator_1.Roles)('PLATFORM_ADMIN', 'COMPANY_ADMIN'),
@@ -298,6 +312,14 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "getFareHistory", null);
+__decorate([
+    (0, common_1.Get)('company/:companyId/payment-plans'),
+    (0, roles_decorator_1.Roles)('PLATFORM_ADMIN', 'COMPANY_ADMIN'),
+    __param(0, (0, common_1.Param)('companyId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getCompanyPaymentPlans", null);
 exports.AdminController = AdminController = __decorate([
     (0, common_1.Controller)('admin'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),

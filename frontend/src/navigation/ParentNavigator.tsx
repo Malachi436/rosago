@@ -24,6 +24,8 @@ import TermsPrivacyScreen from "../screens/parent/TermsPrivacyScreen";
 import PaymentsScreen from "../screens/parent/PaymentsScreen";
 import ReceiptHistoryScreen from "../screens/parent/ReceiptHistoryScreen";
 import HomePickupMapScreen from "../screens/parent/HomePickupMapScreen";
+import RequestLocationChangeScreen from "../screens/parent/RequestLocationChangeScreen";
+import LinkChildScreen from "../screens/parent/LinkChildScreen";
 
 export type ParentTabParamList = {
   Home: undefined;
@@ -44,6 +46,8 @@ export type ParentStackParamList = {
   Payments: undefined;
   ReceiptHistory: undefined;
   SetHomePickup: { childId: string };
+  RequestLocationChange: undefined;
+  LinkChild: undefined;
 };
 
 const Tab = createBottomTabNavigator<ParentTabParamList>();
@@ -181,6 +185,22 @@ export default function ParentNavigator() {
         component={HomePickupMapScreen}
         options={{
           title: "Set Home Pickup Location",
+          presentation: "modal",
+        }}
+      />
+      <Stack.Screen
+        name="RequestLocationChange"
+        component={RequestLocationChangeScreen}
+        options={{
+          title: "Request Location Change",
+          presentation: "modal",
+        }}
+      />
+      <Stack.Screen
+        name="LinkChild"
+        component={LinkChildScreen}
+        options={{
+          title: "Link Child",
           presentation: "modal",
         }}
       />

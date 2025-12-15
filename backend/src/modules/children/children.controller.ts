@@ -18,6 +18,12 @@ export class ChildrenController {
     return this.childrenService.create(createChildDto);
   }
 
+  @Post('bulk-onboard')
+  @Roles('PLATFORM_ADMIN', 'COMPANY_ADMIN')
+  bulkOnboard(@Body() bulkOnboardDto: any) {
+    return this.childrenService.bulkOnboard(bulkOnboardDto);
+  }
+
   @Get()
   @Roles('PLATFORM_ADMIN', 'COMPANY_ADMIN')
   findAll() {
