@@ -32,6 +32,9 @@ let ScheduledRoutesController = class ScheduledRoutesController {
     findAll() {
         return this.scheduledRoutesService.findAll();
     }
+    findByCompany(companyId) {
+        return this.scheduledRoutesService.findByCompany(companyId);
+    }
     findToday() {
         const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
         const today = days[new Date().getDay()];
@@ -75,6 +78,14 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], ScheduledRoutesController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)('company/:companyId'),
+    (0, roles_decorator_1.Roles)('PLATFORM_ADMIN', 'COMPANY_ADMIN'),
+    __param(0, (0, common_1.Param)('companyId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], ScheduledRoutesController.prototype, "findByCompany", null);
 __decorate([
     (0, common_1.Get)('today'),
     (0, roles_decorator_1.Roles)('PLATFORM_ADMIN', 'COMPANY_ADMIN'),

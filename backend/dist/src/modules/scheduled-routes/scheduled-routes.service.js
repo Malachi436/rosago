@@ -36,6 +36,22 @@ let ScheduledRoutesService = class ScheduledRoutesService {
             },
         });
     }
+    async findByCompany(companyId) {
+        return this.prisma.scheduledRoute.findMany({
+            where: {
+                route: {
+                    school: {
+                        companyId,
+                    },
+                },
+            },
+            include: {
+                route: { include: { stops: true, school: true } },
+                driver: { include: { user: true } },
+                bus: true,
+            },
+        });
+    }
     async findOne(id) {
         return this.prisma.scheduledRoute.findUnique({
             where: { id },

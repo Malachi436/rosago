@@ -34,6 +34,12 @@ export class ScheduledRoutesController {
     return this.scheduledRoutesService.findAll();
   }
 
+  @Get('company/:companyId')
+  @Roles('PLATFORM_ADMIN', 'COMPANY_ADMIN')
+  findByCompany(@Param('companyId') companyId: string) {
+    return this.scheduledRoutesService.findByCompany(companyId);
+  }
+
   @Get('today')
   @Roles('PLATFORM_ADMIN', 'COMPANY_ADMIN')
   findToday() {

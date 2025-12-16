@@ -103,7 +103,7 @@ export default function ScheduledRoutesPage({
   const fetchScheduledRoutes = async () => {
     try {
       setLoading(true);
-      const data = await apiClient.get<ScheduledRoute[]>('/scheduled-routes');
+      const data = await apiClient.get<ScheduledRoute[]>(`/scheduled-routes/company/${companyId}`);
       setRoutes(Array.isArray(data) ? data : []);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load scheduled routes');
