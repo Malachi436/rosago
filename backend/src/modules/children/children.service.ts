@@ -155,7 +155,7 @@ export class ChildrenService {
             data: {
               childId,
               tripId: trip.id,
-              status: 'SCHEDULED',
+              status: 'PENDING',
               recordedBy: 'system',
             },
           });

@@ -52,7 +52,7 @@ let TripsService = class TripsService {
     async findActiveByChildId(childId) {
         return this.prisma.trip.findFirst({
             where: {
-                status: { in: ['IN_PROGRESS', 'ARRIVED_SCHOOL', 'RETURN_IN_PROGRESS'] },
+                status: { in: ['SCHEDULED', 'IN_PROGRESS', 'ARRIVED_SCHOOL', 'RETURN_IN_PROGRESS'] },
                 attendances: {
                     some: {
                         childId: childId,
