@@ -145,6 +145,29 @@ export default function RouteMapScreen() {
           </Marker>
         ))}
 
+        {/* Children Home Location Markers */}
+        {childrenOnTrip.map((attendance: any) => {
+          const child = attendance.child;
+          if (child?.homeLatitude && child?.homeLongitude) {
+            return (
+              <Marker
+                key={`child-${child.id}`}
+                coordinate={{
+                  latitude: child.homeLatitude,
+                  longitude: child.homeLongitude,
+                }}
+                title={`${child.firstName} ${child.lastName}`}
+                description={child.homeAddress || "Child's Home"}
+              >
+                <View style={styles.childHomeMarker}>
+                  <Ionicons name="home" size={20} color={colors.neutral.pureWhite} />
+                </View>
+              </Marker>
+            );
+          }
+          return null;
+        })}
+
         {/* Current Location Marker */}
         {trip.currentLocation && (
           <Marker
@@ -295,6 +318,21 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 22,
     backgroundColor: colors.accent.sunsetOrange,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 3,
+    borderColor: colors.neutral.pureWhite,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  childHomeMarker: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: colors.primary.teal,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 3,

@@ -8,5 +8,19 @@ export declare class TripAutomationService {
     private assignChildrenToTrip;
     private shouldChildBeOnRoute;
     private getDayOfWeek;
-    generateTripsManually(): Promise<void>;
+    generateTripsManually(): Promise<{
+        success: boolean;
+        message: string;
+        generatedAt: string;
+        generationType: string;
+        existingTripsCount: number;
+        tripsCreated?: undefined;
+    } | {
+        success: boolean;
+        message: string;
+        generatedAt: string;
+        generationType: string;
+        tripsCreated: number;
+        existingTripsCount?: undefined;
+    }>;
 }

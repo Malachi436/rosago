@@ -49,8 +49,7 @@ let TripsController = class TripsController {
         return this.tripsService.remove(id);
     }
     async generateTodayTrips() {
-        await this.tripAutomationService.generateTripsManually();
-        return { message: 'Trip generation triggered successfully' };
+        return await this.tripAutomationService.generateTripsManually();
     }
 };
 exports.TripsController = TripsController;

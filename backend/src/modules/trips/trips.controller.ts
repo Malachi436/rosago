@@ -64,7 +64,6 @@ export class TripsController {
   @Post('generate-today')
   @Roles('PLATFORM_ADMIN', 'COMPANY_ADMIN')
   async generateTodayTrips() {
-    await this.tripAutomationService.generateTripsManually();
-    return { message: 'Trip generation triggered successfully' };
+    return await this.tripAutomationService.generateTripsManually();
   }
 }

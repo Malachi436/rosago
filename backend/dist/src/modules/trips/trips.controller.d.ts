@@ -93,6 +93,18 @@ export declare class TripsController {
         updatedAt: Date;
     }>;
     generateTodayTrips(): Promise<{
+        success: boolean;
         message: string;
+        generatedAt: string;
+        generationType: string;
+        existingTripsCount: number;
+        tripsCreated?: undefined;
+    } | {
+        success: boolean;
+        message: string;
+        generatedAt: string;
+        generationType: string;
+        tripsCreated: number;
+        existingTripsCount?: undefined;
     }>;
 }
