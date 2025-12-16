@@ -55,9 +55,9 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Only auto-connect for parent users
-    if (role !== 'parent') {
-      console.log('[SocketContext] Not a parent user, skipping auto-connection');
+    // Auto-connect for parent and driver users
+    if (role !== 'parent' && role !== 'driver') {
+      console.log('[SocketContext] Not a parent or driver user, skipping auto-connection');
       return;
     }
 
@@ -151,7 +151,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
         // App coming to foreground - ensure socket is connected
         console.log('[SocketContext] App came to foreground, checking connection');
-        if (isAuthenticated && role === 'parent' && !socketService.isConnected()) {
+        if (isAuthenticated && (role === 'parent' || role === 'driver') && !socketService.isConnected()) {
           connectSocket();
         }
       }
@@ -165,7 +165,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
   // Connect when auth state changes
   useEffect(() => {
-    if (isAuthenticated && role === 'parent') {
+    if (isAuthenticated && (role === 'parent' || role === 'driver')) {
       connectSocket();
     } else {
       socketService.disconnect();

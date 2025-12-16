@@ -253,20 +253,31 @@ export default function DriverHomeScreen() {
       } else {
         console.log('[DriverHome] Starting GPS tracking');
         
-        // Check socket connection
+        // Ensure socket connection
         if (!socketService.isConnected()) {
-          console.log('[DriverHome] Socket not connected, reconnecting...');
+          console.log('[DriverHome] Socket not connected, connecting...');
           await socketService.connect();
+          
+          // Wait for connection to establish
+          let attempts = 0;
+          while (!socketService.isConnected() && attempts < 10) {
+            console.log('[DriverHome] Waiting for socket connection, attempt:', attempts + 1);
+            await new Promise(resolve => setTimeout(resolve, 500));
+            attempts++;
+          }
+          
+          if (!socketService.isConnected()) {
+            throw new Error('Could not establish connection to server. Please check your internet connection.');
+          }
         }
         
         const busId = trip?.bus?.id || trip?.busId || 'unknown-bus';
         console.log('[DriverHome] Starting GPS for busId:', busId);
         
-        // Get the socket instance using proper getter
+        // Get the socket instance
         const socket = socketService.getSocket();
-        if (!socket) {
-          Alert.alert('Error', 'Connection not ready. Please wait and try again.');
-          return;
+        if (!socket || !socket.connected) {
+          throw new Error('Connection not ready. Please try again.');
         }
         
         console.log('[DriverHome] Socket ID:', socket.id, 'Connected:', socket.connected);

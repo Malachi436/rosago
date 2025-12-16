@@ -75,7 +75,7 @@ export const gpsService = {
             accuracy: gpsData.accuracy
           });
 
-          // Emit to backend
+          // Emit to backend if socket is connected
           if (socket.connected) {
             socket.emit('gps_update', {
               busId,
@@ -83,7 +83,11 @@ export const gpsService = {
             });
             console.log('[GPS] Emitted to server for bus:', busId);
           } else {
-            console.warn('[GPS] Socket not connected, cannot emit location');
+            console.warn('[GPS] Socket not connected, attempting reconnection...');
+            // Try to reconnect
+            if (!socket.connected && socket.io.opts.reconnection) {
+              socket.connect();
+            }
           }
         }
       );
