@@ -1,7 +1,8 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, UnauthorizedException, BadRequestException, UseGuards, Req } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { LoginDto, SignupDto, RefreshTokenDto, ForgotPasswordDto, ResetPasswordDto } from './dto/auth.dto';
+import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -50,5 +51,18 @@ export class AuthController {
   @Post('reset-password')
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     return this.authService.resetPassword(resetPasswordDto.resetToken, resetPasswordDto.newPassword);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  async logout(@Req() req: any) {
+    // In a stateless JWT system, logout is handled client-side by removing the token
+    // However, we can invalidate the refresh token in the database
+    const userId = req.user.userId;
+    if (userId) {
+      await this.usersService.clearRefreshToken(userId);
+    }
+    return { message: 'Logged out successfully' };
   }
 }

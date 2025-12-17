@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const auth_service_1 = require("./auth.service");
 const users_service_1 = require("../users/users.service");
 const auth_dto_1 = require("./dto/auth.dto");
+const jwt_auth_guard_1 = require("./jwt-auth.guard");
 let AuthController = class AuthController {
     constructor(authService, usersService) {
         this.authService = authService;
@@ -42,6 +43,13 @@ let AuthController = class AuthController {
     }
     async resetPassword(resetPasswordDto) {
         return this.authService.resetPassword(resetPasswordDto.resetToken, resetPasswordDto.newPassword);
+    }
+    async logout(req) {
+        const userId = req.user.userId;
+        if (userId) {
+            await this.usersService.clearRefreshToken(userId);
+        }
+        return { message: 'Logged out successfully' };
     }
 };
 exports.AuthController = AuthController;
@@ -85,6 +93,15 @@ __decorate([
     __metadata("design:paramtypes", [auth_dto_1.ResetPasswordDto]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "resetPassword", null);
+__decorate([
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, common_1.Post)('logout'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "logout", null);
 exports.AuthController = AuthController = __decorate([
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService,

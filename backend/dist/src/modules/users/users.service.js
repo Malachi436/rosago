@@ -68,6 +68,12 @@ let UsersService = class UsersService {
             where: { id },
         });
     }
+    async clearRefreshToken(userId) {
+        await this.prisma.user.update({
+            where: { id: userId },
+            data: { refreshToken: null },
+        });
+    }
 };
 exports.UsersService = UsersService;
 exports.UsersService = UsersService = __decorate([

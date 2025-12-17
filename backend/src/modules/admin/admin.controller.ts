@@ -19,8 +19,8 @@ export class AdminController {
 
   @Get('stats/company/:companyId')
   @Roles('PLATFORM_ADMIN', 'COMPANY_ADMIN')
-  async getCompanyStats(@Param('companyId') companyId: string) {
-    return this.adminService.getCompanyStats(companyId);
+  async getCompanyStats(@Param('companyId') companyId: string, @Req() req: any) {
+    return this.adminService.getCompanyStats(companyId, req.user);
   }
 
   @Post('company')

@@ -45,7 +45,12 @@ export class AdminService {
     };
   }
 
-  async getCompanyStats(companyId: string): Promise<any> {
+  async getCompanyStats(companyId: string, user?: any): Promise<any> {
+    // If user is COMPANY_ADMIN, verify they belong to this company
+    if (user && user.role === 'COMPANY_ADMIN' && user.companyId !== companyId) {
+      throw new NotFoundException('Company not found');
+    }
+
     const [
       totalSchools,
       totalUsers,

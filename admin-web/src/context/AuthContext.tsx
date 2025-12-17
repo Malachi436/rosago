@@ -14,6 +14,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Load token from localStorage on mount
   useEffect(() => {
     const savedToken = localStorage.getItem('token');
+    const savedRefreshToken = localStorage.getItem('refreshToken');
     const savedUser = localStorage.getItem('user');
 
     if (savedToken && savedUser) {
@@ -21,9 +22,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setToken(savedToken);
         setUser(JSON.parse(savedUser));
         apiClient.setToken(savedToken);
+        if (savedRefreshToken) {
+          apiClient.setRefreshToken(savedRefreshToken);
+        }
       } catch (error) {
         console.error('Failed to restore auth', error);
         localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
       }
     }
@@ -38,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password,
       });
 
-      const { access_token, user: userData } = response;
+      const { access_token, refresh_token, user: userData } = response;
 
       // Validate role is admin (check for uppercase roles from backend)
       const role = userData.role?.toUpperCase() || '';
@@ -49,8 +54,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setToken(access_token);
       setUser(userData);
       apiClient.setToken(access_token);
+      apiClient.setRefreshToken(refresh_token);
 
       localStorage.setItem('token', access_token);
+      localStorage.setItem('refreshToken', refresh_token);
       localStorage.setItem('user', JSON.stringify(userData));
     } finally {
       setIsLoading(false);
@@ -62,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null);
     apiClient.clearToken();
     localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
   };
 

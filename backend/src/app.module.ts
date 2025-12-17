@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
+import { AppController } from './app.controller';
 import { AuthModule } from './modules/auth/auth.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { TenancyModule } from './modules/tenancy/tenancy.module';
@@ -24,6 +25,7 @@ import { EarlyPickupModule } from './modules/early-pickup/early-pickup.module';
 import { ScheduledRoutesModule } from './modules/scheduled-routes/scheduled-routes.module';
 import { HealthModule } from './modules/health/health.module';
 import { EmailModule } from './modules/email/email.module';
+import { CompaniesModule } from './modules/companies/companies.module';
 
 @Module({
   imports: [
@@ -70,8 +72,9 @@ import { EmailModule } from './modules/email/email.module';
     ScheduledRoutesModule,
     HealthModule,
     EmailModule,
+    CompaniesModule,
   ],
-  controllers: [],
+  controllers: [AppController],
   providers: [],
 })
 export class AppModule {}

@@ -19,7 +19,7 @@ describe('AppController (e2e)', () => {
         return (0, supertest_1.default)(app.getHttpServer())
             .get('/')
             .expect(200)
-            .expect('Hello World!');
+            .expect('ROSAgo School Bus Management API - Running');
     });
 });
 //# sourceMappingURL=app.e2e-spec.js.map

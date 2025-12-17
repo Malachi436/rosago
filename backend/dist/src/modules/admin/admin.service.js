@@ -76,7 +76,10 @@ let AdminService = class AdminService {
             totalTrips,
         };
     }
-    async getCompanyStats(companyId) {
+    async getCompanyStats(companyId, user) {
+        if (user && user.role === 'COMPANY_ADMIN' && user.companyId !== companyId) {
+            throw new common_1.NotFoundException('Company not found');
+        }
         const [totalSchools, totalUsers, totalDrivers, totalChildren, totalBuses, totalRoutes, totalTrips,] = await Promise.all([
             this.prisma.school.count({ where: { companyId } }),
             this.prisma.user.count({ where: { companyId } }),

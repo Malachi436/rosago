@@ -4,7 +4,7 @@ export declare class AdminController {
     private readonly adminService;
     constructor(adminService: AdminService);
     getPlatformStats(): Promise<any>;
-    getCompanyStats(companyId: string): Promise<any>;
+    getCompanyStats(companyId: string, req: any): Promise<any>;
     createCompany(createCompanyDto: any): Promise<any>;
     createSchool(companyId: string, createSchoolDto: any): Promise<any>;
     getAllCompanies(): Promise<any>;
@@ -34,8 +34,8 @@ export declare class AdminController {
     updateCompanyFare(companyId: string, updateFareDto: UpdateFareDto, req: any): Promise<{
         company: {
             id: string;
-            email: string;
             name: string;
+            email: string;
             phone: string | null;
             address: string | null;
             baseFare: number;
@@ -52,10 +52,10 @@ export declare class AdminController {
         id: string;
         createdAt: Date;
         companyId: string;
+        reason: string | null;
         oldFare: number;
         newFare: number;
         changedBy: string;
-        reason: string | null;
     }[]>;
     getCompanyPaymentPlans(companyId: string): Promise<any[]>;
 }

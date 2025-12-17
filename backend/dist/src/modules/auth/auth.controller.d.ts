@@ -31,4 +31,7 @@ export declare class AuthController {
     resetPassword(resetPasswordDto: ResetPasswordDto): Promise<{
         message: string;
     }>;
+    logout(req: any): Promise<{
+        message: string;
+    }>;
 }

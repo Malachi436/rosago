@@ -27,8 +27,8 @@ let AdminController = class AdminController {
     async getPlatformStats() {
         return this.adminService.getPlatformStats();
     }
-    async getCompanyStats(companyId) {
-        return this.adminService.getCompanyStats(companyId);
+    async getCompanyStats(companyId, req) {
+        return this.adminService.getCompanyStats(companyId, req.user);
     }
     async createCompany(createCompanyDto) {
         return this.adminService.createCompany(createCompanyDto);
@@ -116,8 +116,9 @@ __decorate([
     (0, common_1.Get)('stats/company/:companyId'),
     (0, roles_decorator_1.Roles)('PLATFORM_ADMIN', 'COMPANY_ADMIN'),
     __param(0, (0, common_1.Param)('companyId')),
+    __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "getCompanyStats", null);
 __decorate([

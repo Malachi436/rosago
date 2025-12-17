@@ -45,6 +45,7 @@ const config_1 = require("@nestjs/config");
 const schedule_1 = require("@nestjs/schedule");
 const nest_winston_1 = require("nest-winston");
 const winston = __importStar(require("winston"));
+const app_controller_1 = require("./app.controller");
 const auth_module_1 = require("./modules/auth/auth.module");
 const roles_module_1 = require("./modules/roles/roles.module");
 const tenancy_module_1 = require("./modules/tenancy/tenancy.module");
@@ -66,6 +67,7 @@ const early_pickup_module_1 = require("./modules/early-pickup/early-pickup.modul
 const scheduled_routes_module_1 = require("./modules/scheduled-routes/scheduled-routes.module");
 const health_module_1 = require("./modules/health/health.module");
 const email_module_1 = require("./modules/email/email.module");
+const companies_module_1 = require("./modules/companies/companies.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -104,8 +106,9 @@ exports.AppModule = AppModule = __decorate([
             scheduled_routes_module_1.ScheduledRoutesModule,
             health_module_1.HealthModule,
             email_module_1.EmailModule,
+            companies_module_1.CompaniesModule,
         ],
-        controllers: [],
+        controllers: [app_controller_1.AppController],
         providers: [],
     })
 ], AppModule);

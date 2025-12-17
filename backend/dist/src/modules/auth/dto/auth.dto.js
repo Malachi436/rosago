@@ -20,7 +20,7 @@ __decorate([
 ], LoginDto.prototype, "email", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.MinLength)(6, { message: 'Password must be at least 6 characters' }),
+    (0, class_validator_1.MinLength)(1, { message: 'Password is required' }),
     __metadata("design:type", String)
 ], LoginDto.prototype, "password", void 0);
 class SignupDto {
@@ -32,9 +32,9 @@ __decorate([
 ], SignupDto.prototype, "email", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.MinLength)(6, { message: 'Password must be at least 6 characters' }),
-    (0, class_validator_1.Matches)(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
-        message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number',
+    (0, class_validator_1.MinLength)(8, { message: 'Password must be at least 8 characters' }),
+    (0, class_validator_1.Matches)(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, {
+        message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)',
     }),
     __metadata("design:type", String)
 ], SignupDto.prototype, "password", void 0);
@@ -76,9 +76,9 @@ __decorate([
 ], ResetPasswordDto.prototype, "resetToken", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.MinLength)(6, { message: 'Password must be at least 6 characters' }),
-    (0, class_validator_1.Matches)(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
-        message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number',
+    (0, class_validator_1.MinLength)(8, { message: 'Password must be at least 8 characters' }),
+    (0, class_validator_1.Matches)(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, {
+        message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)',
     }),
     __metadata("design:type", String)
 ], ResetPasswordDto.prototype, "newPassword", void 0);

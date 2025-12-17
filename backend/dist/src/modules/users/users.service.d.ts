@@ -16,14 +16,14 @@ export declare class UsersService {
         schoolId?: string | null;
     }): Promise<{
         id: string;
-        companyId: string | null;
+        email: string;
+        phone: string | null;
         createdAt: Date;
         updatedAt: Date;
-        email: string;
+        companyId: string | null;
         passwordHash: string;
         firstName: string;
         lastName: string;
-        phone: string | null;
         role: import(".prisma/client").$Enums.Role;
         refreshToken: string | null;
         schoolId: string | null;
@@ -31,4 +31,5 @@ export declare class UsersService {
     update(id: string, data: Partial<User>): Promise<User>;
     findAll(): Promise<any[]>;
     remove(id: string): Promise<User>;
+    clearRefreshToken(userId: string): Promise<void>;
 }

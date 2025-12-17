@@ -5,7 +5,7 @@ export declare class AdminService {
     private notificationsService;
     constructor(prisma: PrismaService, notificationsService: NotificationsService);
     getPlatformStats(): Promise<any>;
-    getCompanyStats(companyId: string): Promise<any>;
+    getCompanyStats(companyId: string, user?: any): Promise<any>;
     createCompany(data: any): Promise<any>;
     createSchool(companyId: string, data: any): Promise<any>;
     getAllCompanies(): Promise<any>;
@@ -29,8 +29,8 @@ export declare class AdminService {
     updateCompanyFare(companyId: string, newFare: number, adminId: string, reason?: string): Promise<{
         company: {
             id: string;
-            email: string;
             name: string;
+            email: string;
             phone: string | null;
             address: string | null;
             baseFare: number;
@@ -53,9 +53,9 @@ export declare class AdminService {
         id: string;
         createdAt: Date;
         companyId: string;
+        reason: string | null;
         oldFare: number;
         newFare: number;
         changedBy: string;
-        reason: string | null;
     }[]>;
 }
