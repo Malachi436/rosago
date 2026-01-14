@@ -10,7 +10,7 @@ import { Platform } from 'react-native';
 
 // Socket URL - Backend NestJS server
 // DO NOT include /_expo/loading - that's the Expo dev server
-const SOCKET_URL = 'http://192.168.100.7:3000';
+const SOCKET_URL = 'http://172.20.10.3:3000';
 
 class SocketService {
   private socket: Socket | null = null;

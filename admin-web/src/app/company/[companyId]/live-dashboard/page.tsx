@@ -81,7 +81,7 @@ export default function LiveDashboardPage({ params }: { params: Promise<{ compan
       longitude: loc.longitude,
       timestamp: loc.timestamp,
       plateNumber: trip?.bus.plateNumber,
-      driverName: trip ? `${trip.bus.driver.user.firstName} ${trip.bus.driver.user.lastName}` : undefined,
+      driverName: trip?.bus.driver?.user ? `${trip.bus.driver.user.firstName} ${trip.bus.driver.user.lastName}` : 'No driver',
     };
   });
 
@@ -115,7 +115,7 @@ export default function LiveDashboardPage({ params }: { params: Promise<{ compan
               longitude: locationResponse.longitude,
               timestamp: new Date().toISOString(),
               plateNumber: trip.bus.plateNumber,
-              driverName: `${trip.bus.driver.user.firstName} ${trip.bus.driver.user.lastName}`,
+              driverName: trip.bus.driver?.user ? `${trip.bus.driver.user.firstName} ${trip.bus.driver.user.lastName}` : 'No driver',
             };
           }
         } catch (err) {
@@ -285,8 +285,10 @@ export default function LiveDashboardPage({ params }: { params: Promise<{ compan
                           {trip.bus.plateNumber}
                         </p>
                         <p className="text-xs text-slate-600 mt-1">
-                          Driver: {trip.bus.driver.user.firstName}{' '}
-                          {trip.bus.driver.user.lastName}
+                          Driver: {trip.bus.driver?.user ? 
+                            `${trip.bus.driver.user.firstName} ${trip.bus.driver.user.lastName}` : 
+                            'No driver assigned'
+                          }
                         </p>
                         <div className="mt-2 flex items-center gap-2">
                           <span

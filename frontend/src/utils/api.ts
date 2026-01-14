@@ -5,7 +5,7 @@ import { socketService } from './socket';
 
 // API configuration - Backend NestJS server
 // DO NOT include /_expo/loading - that's the Expo dev server
-const API_BASE_URL = 'http://192.168.100.7:3000';
+const API_BASE_URL = 'http://172.20.10.3:3000';
 
 interface ApiRequestConfig {
   headers?: Record<string, string>;
